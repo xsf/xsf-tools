@@ -3,6 +3,9 @@ xsf-tools
 
 Automated tools for the management of XEPs at the XSF
 
+Right now working towards automatically defering XEPs. For some thoughts on the workflow see:
+http://logs.xmpp.org/editor/2014-06-10/#18:36:56
+
 Usage example for xeputils in version 0.1:
 
 	$ python

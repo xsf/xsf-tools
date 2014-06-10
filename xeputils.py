@@ -36,6 +36,7 @@ from xml.dom.minidom import parse,parseString,Document,getDOMImplementation
 import datetime
 import glob
 import os
+import re
 import traceback
 
 def getText(nodelist):
@@ -46,7 +47,29 @@ def getText(nodelist):
             thisText = thisText + node.data
     return thisText
 
-class XEPInfo(object):
+def replaceElementText(filename, elementname, text):
+    """Updates the text of the first occurance of an element of a XML file in
+       place.
+
+       Arguments:
+           filename (str):      Name of the XML file to modify
+           elementname (str):   Name of the element to modify
+           text (str):          Text to replace the text of the elemen with
+    """
+    # EVIL HACK WARNING:
+    # Using a XMP parser to read and write the XEP more or less destroys it, so
+    # we use blunt text replacement to update the element.
+    f = open(filename, 'r')
+    xepText = f.read()
+    f.close()
+    pattern = "<{0}>[a-zA-Z0-9]*</{0}>".format(elementname)
+    replacement = "<{0}>{1}</{0}>".format(elementname, text)
+    xepText = re.sub(pattern, replacement, xepText, count=1)
+    f = open(filename, 'w')
+    f.write(xepText)
+    f.close()
+
+class XEP(object):
     """
     Class describing a XEP, as parsed from its XML
     
@@ -57,6 +80,9 @@ class XEPInfo(object):
         depends (list):                 List of strings containing all specs
                                             listed in this XEP dependencies
                                             nodes
+        filename (str or None)          Full filename of the parsed XEP, None if
+                                            the XEP was parsed from a raw XML
+                                            string
         interim (bool):                 True if the XEP has an 'interim' tag
         lastcall (datetime or False):   The 'lastcall' date, if the XEP has
                                             one, else False
@@ -74,11 +100,13 @@ class XEPInfo(object):
         type (str):                     The 'type' of the XEP
         version (str):                  The full version string of the
                                             latest revision of the XEP
+        xep (minidom document)          The full XML tree of the XEP as minidom
+                                            document
     """
 
     def __init__(self, filename_or_xml, parseStr=False):
         """
-        Creates an XEPInfo object.
+        Creates an XEP object.
 
         Arguments:
             filename_or_xml (str):  The filename of the XEP to be read or the
@@ -86,11 +114,13 @@ class XEPInfo(object):
             parseStr (bool):        Optional, when true, the first argument is parsed as
                                         raw XML
         """
-        thexep = ""
         if parseStr:
             thexep = parseString(filename_or_xml)
+            self.filename = None
         else:
             thexep = parse(filename_or_xml)
+            self.filename = filename_or_xml
+        self.xep = thexep
         xepNode = (thexep.getElementsByTagName("xep")[0])
         headerNode = (xepNode.getElementsByTagName("header")[0])
         titleNode = (headerNode.getElementsByTagName("title")[0])
@@ -149,11 +179,15 @@ class XEPInfo(object):
         Prints a nice overview of the parsed info of the XEP.
         """
         items = self.__dict__.keys()
-        # reverse=True is a hack to get a nicer order ;-)
-        items.sort(reverse=True)
+        items.remove('xep') # no need for this one
+        items.sort(reverse=True) # hack to get a nicer order
         print self.__str__()
         for item in items:
             print "  {:<18}  {}".format(item, self.__dict__[item])
+
+    def setDeferred(self):
+        replaceElementText(self.filename, "status", "Deferred")
+        self.status = "Deferred"
 
 class AllXEPs(object):
     """
@@ -171,33 +205,33 @@ class AllXEPs(object):
         files.sort()
         for fle in files:
             try:
-                self.xeps.append(XEPInfo(fle))
+                self.xeps.append(XEP(fle))
             except:
-                print "Error while parsing %s" % fle
+                print "Error while parsing {}".format(fle)
                 traceback.print_exc()
 
     def getInterim(self):
         """
-        Returns list with XEPInfo objects of all XEPS with the status 'interim'.
+        Returns list with XEP objects of all XEPs with the status 'interim'.
         """
         return [x for x in self.xeps if x.interim]
 
     def getNoShortName(self):
         """
-        Returns list with XEPInfo objects of all XEPS without a shortname.
+        Returns list with XEP objects of all XEPs without a shortname.
         Mainly for testing purposes.
         """
         return [x for x in self.xeps if not x.shortname]
         
     def getLastCall(self):
         """
-        Returns list with XEPInfo objects of all XEPS that have a last call.
+        Returns list with XEP objects of all XEPs that have a last call.
         """
         return [x for x in self.xeps if x.lastcall]
 
     def getExpired(self, idle=365):
         """
-        Returns list with XEPInfo objects of all experimental XEPS that have
+        Returns list with XEP objects of all experimental XEPs that have
         been idle for more then 'idle' days.
 
         Arguments:
