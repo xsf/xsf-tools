@@ -33,12 +33,17 @@
 ## END LICENSE ##
 
 from xml.dom.minidom import parse,parseString,Document,getDOMImplementation
-import datetime
-import glob
-import os
-import re
 import sys
+import os
+import glob
+import shutil
+import tempfile
 import traceback
+import subprocess
+import re
+import datetime
+
+
 
 def getText(nodelist):
     """Utility function, reads content of all textnodes into one string"""
@@ -69,6 +74,26 @@ def replaceElementText(filename, elementname, text):
     f = open(filename, 'w')
     f.write(xepText)
     f.close()
+
+def prepDir(path=None):
+    """
+    Utility function, to prepare a directory for e.g. storing the generated
+    XEPs.
+
+    Arguments:
+      path (str):  The path to prepare, when empty, False or None, a temporary
+                   directory will be created.
+    """
+    if path:
+        if os.path.exists(path):
+            return path
+        else:
+            os.makedirs(path)
+    else:
+        # Do something innocent when no path is provided
+        path = tempfile.mkdtemp(prefix='XEPs_')
+    print "creating {}".format(path)
+    return path
 
 class XEP(object):
     """
@@ -128,8 +153,8 @@ class XEP(object):
         titleNode = (headerNode.getElementsByTagName("title")[0])
         self.title = getText(titleNode.childNodes)
         nr = getText((headerNode.getElementsByTagName("number")[0]).childNodes)
-        path, fle = os.path.split(self.filename)
-        if os.path.basename(path) == 'inbox' or fle == "xep-template.xml":
+        self.path, fle = os.path.split(self.filename)
+        if os.path.basename(self.path) == 'inbox' or fle == "xep-template.xml":
             # these should have 'xxxx' as number
             if not nr == "xxxx":
                 print "Invalid value for XEP-number ({0}) while parsing protoXEP.".format(nr)
@@ -243,13 +268,77 @@ class XEP(object):
         replaceElementText(self.filename, "status", "Deferred")
         self.status = "Deferred"
 
-
-    def buildXHTML(self):
+    def buildXHTML(self, outpath=None):
         """
         Generates a nice formatted XHTML file from the XEP.
+
+        Arguments:
+          path (str): The full path were the tree of the generated XEPs should
+                      be build. When unspecified, a temporary directory
+                      directory in systems default temporary file location is
+                      used.
         """
-        # ToDo
-        pass
+        outpath = prepDir(outpath)
+        if os.path.basename(self.path) == 'inbox':
+            inbox = True
+            xslpath = os.path.abspath(os.path.join(self.path, ".."))
+            # hack to make sure xep.ent & xep.dtd is in the correct dir
+            shutil.copy(os.path.join(xslpath, "xep.ent"), self.path)
+            shutil.copy(os.path.join(xslpath, "xep.dtd"), self.path)
+        else:
+            inbox = False
+            xslpath = self.path
+
+        # Overloading is great, but sometimes a burden ;-)
+        if type(self.nr) is int:
+            nr = "{:0>4d}".format(self.nr)
+        else:
+            nr = "{}".format(self.nr)
+
+        # XHTML
+        outfile = open(os.path.join(outpath, "xep-{}.html".format(nr)), "w")
+        xsl = os.path.join(xslpath, "xep.xsl")
+        p = subprocess.Popen(["xsltproc", xsl, self.filename],
+                              stdout=outfile,
+                              stderr=subprocess.PIPE)
+        (dummy, error) = p.communicate()
+        outfile.close()
+        if error:
+            print "Error while generating XHTML for {0}: {1}".format(str(self), error)
+
+        # Reference
+        if not os.path.exists(os.path.join(outpath, "refs")):
+            os.makedirs(os.path.join(outpath, "refs"))
+        outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(nr)), "w")
+        xsl = os.path.join(xslpath, "ref.xsl")
+        p = subprocess.Popen(["xsltproc", xsl, self.filename],
+                              stdout=outfile,
+                              stderr=subprocess.PIPE)
+        (dummy, error) = p.communicate()
+        outfile.close()
+        if error:
+            print "Error while generating reference for {0}: {1}".format(str(self), error)
+
+        # Examples
+        if not os.path.exists(os.path.join(outpath, "examples")):
+            os.makedirs(os.path.join(outpath, "examples"))
+        outfile = open(os.path.join(outpath, "examples", "{}.xml".format(nr)), "w")
+        xsl = os.path.join(xslpath, "examples.xsl")
+        p = subprocess.Popen(["xsltproc", xsl, self.filename],
+                              stdout=outfile,
+                              stderr=subprocess.PIPE)
+        (dummy, error) = p.communicate()
+        outfile.close()
+        if error:
+            print "Error while generating examples for {0}: {1}".format(str(self), error)
+
+        # The source xml
+        shutil.copy(self.filename, outpath)
+
+        # Cleanup
+        if inbox:
+            os.remove(os.path.join(self.path, "xep.ent"))
+            os.remove(os.path.join(self.path, "xep.dtd"))
 
     def buildPDF(self):
         """
@@ -320,11 +409,14 @@ class AllXEPs(object):
         cutOff = datetime.datetime.now()-datetime.timedelta(days=idle)
         return [x for x in self.xeps if x.status == "Experimental" and x.date < cutOff]
 
-    def buildAll(self):
+    def buildAll(self, outpath=None):
         """
         Generate XHTML and PDF Files for all XEPs, including a XHTML index table
         """
-        # ToDo
+        outpath = prepDir(outpath)
+        for xep in self.xeps:
+            xep.buildXHTML(outpath)
+        # ToDo: PDF
         pass
 
     def buildTables(self):
