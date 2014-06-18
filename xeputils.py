@@ -37,10 +37,11 @@ import datetime
 import glob
 import os
 import re
+import sys
 import traceback
 
 def getText(nodelist):
-    """Reads content of all textnodes into one string"""
+    """Utility function, reads content of all textnodes into one string"""
     thisText = ""
     for node in nodelist:
         if node.nodeType == node.TEXT_NODE:
@@ -48,8 +49,8 @@ def getText(nodelist):
     return thisText
 
 def replaceElementText(filename, elementname, text):
-    """Updates the text of the first occurance of an element of a XML file in
-       place.
+    """Utility function, updates the text of the first occurance of an
+       element of a XML file in place.
 
        Arguments:
            filename (str):      Name of the XML file to modify
@@ -91,8 +92,9 @@ class XEP(object):
         minorVersion (int or str):      The second digit of the version
                                             string, will be string if it is a
                                             interim XEP release candidate
-        nr (int):                       The XEP 'number' as in the header of
-                                            the XEP
+        nr (int or str):                The XEP 'number' as in the header of
+                                            the XEP, integer or str if it is
+                                            XEP-README or XEP-template
         shortname (str or None):        The 'shortname', if the XEP has one,
                                             else None
         status (str):                   The 'status' of the XEP
@@ -125,7 +127,23 @@ class XEP(object):
         headerNode = (xepNode.getElementsByTagName("header")[0])
         titleNode = (headerNode.getElementsByTagName("title")[0])
         self.title = getText(titleNode.childNodes)
-        self.nr = int(getText((headerNode.getElementsByTagName("number")[0]).childNodes))
+        nr = getText((headerNode.getElementsByTagName("number")[0]).childNodes)
+        path, fle = os.path.split(self.filename)
+        if os.path.basename(path) == 'inbox' or fle == "xep-template.xml":
+            # these should have 'xxxx' as number
+            if not nr == "xxxx":
+                print "Invalid value for XEP-number ({0}) while parsing protoXEP.".format(nr)
+                print "  XEP file: {}".format(self.filename)
+                print
+            self.nr = fle[:-4]
+        elif fle == "xep-README.xml" and nr == "README":
+            self.nr = nr
+        else:
+            try:
+                self.nr = int(nr)
+            except:
+                self.nr = nr
+                self.__printParsingError__("XEP number")
         shortnameNode = headerNode.getElementsByTagName("shortname")
         if shortnameNode:
             self.shortname = getText((shortnameNode[0]).childNodes)
@@ -139,7 +157,11 @@ class XEP(object):
         if lastcallNode:
             lastcallNode = lastcallNode[0]
             lastcallString = getText(lastcallNode.childNodes)
-            self.lastcall = datetime.datetime.strptime(lastcallString,"%Y-%m-%d")
+            try:
+                self.lastcall = datetime.datetime.strptime(lastcallString,"%Y-%m-%d")
+            except:
+                self.lastcall = False
+                self.__printParsingError__("last call")
         else:
             self.lastcall = False
         self.type = getText((headerNode.getElementsByTagName("type")[0]).childNodes)
@@ -150,17 +172,26 @@ class XEP(object):
             self.interim = False;
         revNode = (headerNode.getElementsByTagName("revision")[0])
         dateString = getText((revNode.getElementsByTagName("date")[0]).childNodes)
-        self.date = datetime.datetime.strptime(dateString,"%Y-%m-%d")
+        try:
+            self.date = datetime.datetime.strptime(dateString,"%Y-%m-%d")
+        except:
+            self.date = datetime.datetime.now()
+            self.__printParsingError__("date")
         self.version = getText((revNode.getElementsByTagName("version")[0]).childNodes)
-        self.majorVersion = int(self.version.split('.')[0])
+        try:
+            self.majorVersion = int(self.version.split('.')[0])
+        except:
+            self.majorVersion = 0
+            self.__printParsingError__("major version")
         try:
             self.minorVersion = int(self.version.split('.')[1])
         except ValueError:
             if self.interim:
                 self.minorVersion = self.version.split('.')[1]
             else:
-                raise
-
+                self.minorVersion = 0
+                self.__printParsingError__("major version")
+                
         depNode = headerNode.getElementsByTagName("dependencies")
         self.depends = []
         if depNode:
@@ -169,10 +200,30 @@ class XEP(object):
                 self.depends.append(getText(dep.childNodes))
 
     def __str__(self):
-        return "XEP-{:0>4d}".format(self.nr)
+        """
+        The XEP name es string, e.g: 'XEP-0001'
+        """
+        if not self.nr:
+            print self.filename
+        if type(self.nr) is int:
+            return "XEP-{:0>4d}".format(self.nr)
+        else:
+            return "XEP-{0}".format(self.nr)
 
     def __repr__(self):
+        """
+        The XEP name es string, e.g: 'XEP-0001'
+        """
         return self.__str__()
+
+    def __printParsingError__(self, valuedescription):
+        """
+        Prints a nice message when some value doesn't parse.
+        """
+        print "Invalid value for {0} while parsing {1}, setting to a default.".format(valuedescription, str(self))
+        print "  XEP file: {}".format(self.filename)
+        print "  Error: {}".format(sys.exc_info()[1])
+        print
 
     def pprint(self):
         """
@@ -186,29 +237,57 @@ class XEP(object):
             print "  {:<18}  {}".format(item, self.__dict__[item])
 
     def setDeferred(self):
+        """
+        Marks XEP as 'Deferred'
+        """
         replaceElementText(self.filename, "status", "Deferred")
         self.status = "Deferred"
+
+
+    def buildXHTML(self):
+        """
+        Generates a nice formatted XHTML file from the XEP.
+        """
+        # ToDo
+        pass
+
+    def buildPDF(self):
+        """
+        Generates a nice formatted XHTML file from the XEP.
+        """
+        # ToDo
+        pass
+        
 
 class AllXEPs(object):
     """
     Class containing info about all XEP XML files from one directory
     """
-    def __init__(self, directory):
+    def __init__(self, directory, allFiles=True):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
 
         Arguments:
-            directory (str): directory to search XEP-files in
+            directory (str): Directory to search XEP-files in
+            allFiles (bool): When true, all xml in the directory are parsed
+                             otherwise only the files with the format:
+                             xep-????.xml
         """
         self.xeps = []
-        files = glob.glob(os.path.abspath(directory)+'/xep-????.xml')
+        if allFiles:
+            fltr = '*.xml'
+        else:
+            fltr = 'xep-????.xml'
+        fltr = os.path.join(os.path.abspath(directory), fltr)
+        files = glob.glob(fltr)
         files.sort()
         for fle in files:
             try:
                 self.xeps.append(XEP(fle))
             except:
                 print "Error while parsing {}".format(fle)
-                traceback.print_exc()
+                print "WARNING: XEP is not included"
+                print traceback.format_exc()
 
     def getInterim(self):
         """
@@ -236,6 +315,21 @@ class AllXEPs(object):
 
         Arguments:
           idle (int): optional number of days before an experimental XEP expires
+                      defaults to 365 days
         """
         cutOff = datetime.datetime.now()-datetime.timedelta(days=idle)
         return [x for x in self.xeps if x.status == "Experimental" and x.date < cutOff]
+
+    def buildAll(self):
+        """
+        Generate XHTML and PDF Files for all XEPs, including a XHTML index table
+        """
+        # ToDo
+        pass
+
+    def buildTables(self):
+        """
+        Generates XHTML and XML index tables of all XEPs
+        """
+        # ToDo
+        pass
