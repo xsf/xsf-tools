@@ -39,11 +39,14 @@ dependencies:
  texml (python module, for source see: http://getfo.org)
  xelatex (executable binary, debian package texlive-xetex)
    Aditionally xelatex needs some dependencies:
-    	texlive-latex-recommended (debian package)
-    	texlive-fonts-recommended (debian package)
-    	texlive-latex-extra (debian package)
+        texlive-base (debian package)
+        texlive-xetex (debian package)
     	texlive-fonts-extra (debian package)
- 
+    	texlive-fonts-recommended (debian package)
+        texlive-latex-base (debian package)
+    	texlive-latex-extra (debian package)
+    	texlive-latex-recommended (debian package)
+    	tipa (debian package)
 """
 
 import os
@@ -231,13 +234,15 @@ def buildPDF(xep, outpath=None):
     f.close()
 
     # Build PDF
-    p = subprocess.Popen(["xelatex", "-interaction=batchmode", texfile],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         cwd=temppath)
-    (out, error) = p.communicate()
-    if error:
-        print "Error while generating PDF for {0}: {1}".format(str(xep), error)
+    # Do this multiple times, to build TOC and references
+    for i in range(2):
+        p = subprocess.Popen(["xelatex", "-interaction=batchmode", texfile],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             cwd=temppath)
+        (out, error) = p.communicate()
+        if error:
+            print "Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i)
 
     # move the PDF out of the way and clean up
     shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(nr)), outpath)
