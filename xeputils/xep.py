@@ -175,7 +175,7 @@ class XEP(object):
 
     def __str__(self):
         """
-        The XEP name es string, e.g: 'XEP-0001'
+        The XEP name as string, e.g: 'XEP-0001'
         """
         if not self.nr:
             print self.filename
@@ -186,7 +186,7 @@ class XEP(object):
 
     def __repr__(self):
         """
-        The XEP name es string, e.g: 'XEP-0001'
+        The XEP name as string, e.g: 'XEP-0001'
         """
         return self.__str__()
 

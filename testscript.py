@@ -59,7 +59,7 @@ if a.xeps:
 print "With images:"
 for i in a.getWithImages():
     i.pprint()
-#    i.buildPDF()
+    #i.buildPDF()
 print "Building all"
 a.buildAll()
 

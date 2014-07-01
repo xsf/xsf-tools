@@ -131,10 +131,12 @@ class AllXEPs(object):
         """
         Generate XHTML and PDF Files for all XEPs, including a XHTML index table
         """
+        # ToDo: handle interim XEPs correctly
         outpath = prepDir(outpath)
         for xep in self.xeps:
             xep.buildXHTML(outpath)
             xep.buildPDF(outpath)
+        # ToDo: bundle
         # ToDo: table
 
     def buildTables(self):
@@ -143,5 +145,14 @@ class AllXEPs(object):
         """
         # ToDo
         pass
+
+    def buildBundle(self):
+        """
+        Generates a tar.bz2 file containing PDFs of all published XEPs (not
+        including: XEP-readme and XEP-template).
+        """
+        # ToDo
+        pass
+
 
 # ToDo: get previous version of interim XEP
