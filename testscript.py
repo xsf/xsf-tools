@@ -53,8 +53,13 @@ print a.getLastCall()
 print "Expired:"
 for i in a.getExpired():
     print i, i.date
-print "testing pprint:"
-a.getInterim()[0].pprint()
+if a.xeps:
+    print "testing pprint:"
+    a.xeps[0].pprint()
+print "With images:"
+for i in a.getWithImages():
+    i.pprint()
+#    i.buildPDF()
 print "Building all"
 a.buildAll()
 

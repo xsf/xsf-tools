@@ -101,7 +101,14 @@ class AllXEPs(object):
         Mainly for testing purposes.
         """
         return [x for x in self.xeps if not x.shortname]
-        
+
+    def getWithImages(self):
+        """
+        Returns list with XEP objects of all XEPs that have img tags.
+        Mainly for testing purposes.
+        """
+        return [x for x in self.xeps if x.images]
+      
     def getLastCall(self):
         """
         Returns list with XEP objects of all XEPs that have a last call.
@@ -127,7 +134,8 @@ class AllXEPs(object):
         outpath = prepDir(outpath)
         for xep in self.xeps:
             xep.buildXHTML(outpath)
-        # ToDo: PDF
+            xep.buildPDF(outpath)
+        # ToDo: table
 
     def buildTables(self):
         """
@@ -136,3 +144,4 @@ class AllXEPs(object):
         # ToDo
         pass
 
+# ToDo: get previous version of interim XEP

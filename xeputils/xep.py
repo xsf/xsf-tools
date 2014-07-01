@@ -168,6 +168,11 @@ class XEP(object):
             for dep in depNode.getElementsByTagName("spec"):
                 self.depends.append(self.__getText__(dep.childNodes))
 
+        imgs = xepNode.getElementsByTagName('img')
+        self.images=[]
+        for img in imgs:
+            self.images.append(img.attributes["src"].value)
+
     def __str__(self):
         """
         The XEP name es string, e.g: 'XEP-0001'
@@ -233,7 +238,17 @@ class XEP(object):
         items.sort(reverse=True) # hack to get a nicer order
         print self.__str__()
         for item in items:
-            print "  {:<18}  {}".format(item, self.__dict__[item])
+            if item == "images":
+                imgs = []
+                for img in self.__dict__[item]:
+                    if img[:10] == "data:image":
+                        (imgmeta, imgdata) = img.split(',', 1)
+                        imgs.append("{0} ({1} bytes)".format(imgmeta, len(imgdata)))
+                    else:
+                        imgs.append(img)
+                print "  {:<18}  {}".format(item, imgs)
+            else:
+                print "  {:<18}  {}".format(item, self.__dict__[item])
 
     def setDeferred(self):
         """

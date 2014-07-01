@@ -32,13 +32,33 @@
 #
 ## END LICENSE ##
 
+"""
+Functions for building XHTML and PDF files from XEPs. These have some
+dependencies:
+ xsltproc (executable binary, debian package xsltproc)
+ texml (python module, for source see: http://getfo.org)
+ xelatex (executable binary, debian package texlive-xetex)
+   Aditionally xelatex needs some dependencies:
+    	texlive-latex-recommended (debian package)
+    	texlive-fonts-recommended (debian package)
+    	texlive-latex-extra (debian package)
+    	texlive-fonts-extra (debian package)
+ 
+"""
+
 import os
+import StringIO
 import shutil
 import tempfile
 import subprocess
+import base64
+import urlparse
+import urllib
+import re
+import Texml.processor
 import xeputils.repository
 
-def buildXHTML(self, outpath=None):
+def buildXHTML(xep, outpath=None):
     """
     Generates a nice formatted XHTML file from the XEP.
 
@@ -49,68 +69,68 @@ def buildXHTML(self, outpath=None):
                   used.
     """
     outpath = xeputils.repository.prepDir(outpath)
-    if os.path.basename(self.path) == 'inbox':
+    if os.path.basename(xep.path) == 'inbox':
         inbox = True
-        xslpath = os.path.abspath(os.path.join(self.path, ".."))
+        xslpath = os.path.abspath(os.path.join(xep.path, ".."))
         # hack to make sure xep.ent & xep.dtd is in the correct dir
-        shutil.copy(os.path.join(xslpath, "xep.ent"), self.path)
-        shutil.copy(os.path.join(xslpath, "xep.dtd"), self.path)
+        shutil.copy(os.path.join(xslpath, "xep.ent"), xep.path)
+        shutil.copy(os.path.join(xslpath, "xep.dtd"), xep.path)
     else:
         inbox = False
-        xslpath = self.path
+        xslpath = xep.path
 
     # Overloading is great, but sometimes a burden ;-)
-    if type(self.nr) is int:
-        nr = "{:0>4d}".format(self.nr)
+    if type(xep.nr) is int:
+        nr = "{:0>4d}".format(xep.nr)
     else:
-        nr = "{}".format(self.nr)
+        nr = "{}".format(xep.nr)
 
     # XHTML
     outfile = open(os.path.join(outpath, "xep-{}.html".format(nr)), "w")
     xsl = os.path.join(xslpath, "xep.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, self.filename],
+    p = subprocess.Popen(["xsltproc", xsl, xep.filename],
                           stdout=outfile,
                           stderr=subprocess.PIPE)
     (dummy, error) = p.communicate()
     outfile.close()
     if error:
-        print "Error while generating XHTML for {0}: {1}".format(str(self), error)
+        print "Error while generating XHTML for {0}: {1}".format(str(xep), error)
 
     # Reference
     if not os.path.exists(os.path.join(outpath, "refs")):
         os.makedirs(os.path.join(outpath, "refs"))
     outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(nr)), "w")
     xsl = os.path.join(xslpath, "ref.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, self.filename],
+    p = subprocess.Popen(["xsltproc", xsl, xep.filename],
                           stdout=outfile,
                           stderr=subprocess.PIPE)
     (dummy, error) = p.communicate()
     outfile.close()
     if error:
-        print "Error while generating reference for {0}: {1}".format(str(self), error)
+        print "Error while generating reference for {0}: {1}".format(str(xep), error)
 
     # Examples
     if not os.path.exists(os.path.join(outpath, "examples")):
         os.makedirs(os.path.join(outpath, "examples"))
     outfile = open(os.path.join(outpath, "examples", "{}.xml".format(nr)), "w")
     xsl = os.path.join(xslpath, "examples.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, self.filename],
+    p = subprocess.Popen(["xsltproc", xsl, xep.filename],
                           stdout=outfile,
                           stderr=subprocess.PIPE)
     (dummy, error) = p.communicate()
     outfile.close()
     if error:
-        print "Error while generating examples for {0}: {1}".format(str(self), error)
+        print "Error while generating examples for {0}: {1}".format(str(xep), error)
 
     # The source xml
-    shutil.copy(self.filename, outpath)
+    shutil.copy(xep.filename, outpath)
 
     # Cleanup
     if inbox:
-        os.remove(os.path.join(self.path, "xep.ent"))
-        os.remove(os.path.join(self.path, "xep.dtd"))
+        os.remove(os.path.join(xep.path, "xep.ent"))
+        os.remove(os.path.join(xep.path, "xep.dtd"))
 
-def buildPDF(self, outpath=None):
+def buildPDF(xep, outpath=None):
     """
     Generates a nice formatted PDF file from the XEP.
 
@@ -121,5 +141,102 @@ def buildPDF(self, outpath=None):
                   directory in systems default temporary file location is
                   used.
     """
-    # ToDo
-    pass
+    outpath = xeputils.repository.prepDir(outpath)
+    temppath = tempfile.mkdtemp(prefix='XEPbuilder_')
+    if os.path.basename(xep.path) == 'inbox':
+        xslpath = os.path.abspath(os.path.join(xep.path, ".."))
+    else:
+        xslpath = xep.path
+
+    for fle in ["xep.ent", "xep.dtd", "xep2texml.xsl", "../images/xmpp.pdf",
+                "../images/xmpp-text.pdf", "deps/adjcalc.sty",
+                "deps/collectbox.sty", "deps/tc-dvips.def", "deps/tc-pgf.def",
+                "deps/trimclip.sty", "deps/adjustbox.sty", "deps/tabu.sty",
+                "deps/tc-pdftex.def", "deps/tc-xetex.def"]:
+        shutil.copy(os.path.join(xslpath, fle), temppath)
+    shutil.copy(xep.filename, temppath)
+
+    # Overloading is great, but sometimes a burden ;-)
+    if type(xep.nr) is int:
+        nr = "{:0>4d}".format(xep.nr)
+    else:
+        nr = "{}".format(xep.nr)
+
+    # save inline images in tempdir
+    for (no, img) in enumerate(xep.images):
+        up = urlparse.urlparse(img)
+        if up.scheme == 'data':
+            head, data = up.path.split(',')
+            # Tobias suggested to do something sensible with charset, mimetype
+            # and encoding. I love the idea, but something tells me we will only
+            # see these:
+            if not head in ['image/png;base64', 'image/jpeg;base64']:
+                raise Exception("Unknown encoding for inline image in {0}: {1}".format(str(xep), head))
+            plaindata = base64.b64decode(data)
+            mimetype = head.split(';')[0]
+            fileext = mimetype.split('/')[1]
+            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}.{2}'.format(nr, no, fileext))
+            f = open(imgfilename, 'wb')
+            f.write(plaindata)
+            f.close()
+        elif up.scheme in ['http', 'https']:
+            request = urllib.urlopen(img)
+            filename, fileext = os.path.splitext(up.path)
+            if not fileext:
+                fileext = ".{}".format(request.info().getsubtype())
+            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}{2}'.format(nr, no, fileext))
+            f = open(imgfilename, 'wb')
+            f.write(request.read())
+            f.close()
+            request.close()
+
+    xmlfile = os.path.join(temppath, os.path.basename(xep.filename))
+    texxmlfile = os.path.join(temppath, "xep-{}.tex.xml".format(nr))
+    texfile = os.path.join(temppath, "xep-{}.tex".format(nr))
+
+    # prepare for texml processing
+    outfile = open(texxmlfile, "w")
+    xsl = os.path.join(temppath, "xep2texml.xsl")
+    p = subprocess.Popen(["xsltproc", xsl, xmlfile],
+                          stdout=outfile,
+                          stderr=subprocess.PIPE)
+    (dummy, error) = p.communicate()
+    outfile.close()
+    if error:
+        print "Error while generating tex.xml for {0}: {1}".format(str(xep), error)
+
+    # Create TeX
+    outfile = StringIO.StringIO()
+    try:
+        Texml.processor.process(in_stream=texxmlfile, out_stream=outfile, encoding = "UTF-8")
+    except Exception, msg:
+        print "Error while converting xml to tex for {0}: {1}".format(str(xep), msg)
+    finally:
+        rawtex = outfile.getvalue()
+        outfile.close()
+
+    #detect http urls and escape them to make them breakable
+    # this should match all urls in free text; not the urls in xml:ns or so..so no " or ' in front.
+    # ToDo: check this regex, it may make some mismatches.
+    rawtex = re.sub(r'([\s"])([^"]http://[^ \r\n"]*)', r'\1\\path{\2}', rawtex)
+    
+    #adjust references, strip the pound sign
+    rawtex = re.sub(r'\\hyperref\[#([^\]]*)\]', r'\\hyperref[\1]', rawtex)
+    rawtex = re.sub(r'\\pageref{#([^}]*)}', r'\\pageref{\1}', rawtex)
+
+    f = open(texfile, "w")
+    f.write(rawtex)
+    f.close()
+
+    # Build PDF
+    p = subprocess.Popen(["xelatex", "-interaction=batchmode", texfile],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         cwd=temppath)
+    (out, error) = p.communicate()
+    if error:
+        print "Error while generating PDF for {0}: {1}".format(str(xep), error)
+
+    # move the PDF out of the way and clean up
+    shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(nr)), outpath)
+    shutil.rmtree(temppath)
