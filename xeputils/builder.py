@@ -215,12 +215,14 @@ def buildPDF(xep, outpath=None):
         rawtex = outfile.getvalue()
         outfile.close()
 
-    #detect http urls and escape them to make them breakable
+    # detect http urls and escape them to make them breakable
     # this should match all urls in free text; not the urls in xml:ns or so..so no " or ' in front.
     # ToDo: check this regex, it may make some mismatches.
     rawtex = re.sub(r'([\s"])([^"]http://[^ \r\n"]*)', r'\1\\path{\2}', rawtex)
-    
-    #adjust references, strip the pound sign
+    # and escape the pond sign in the href
+    rawtex = re.sub(r'\\href{([^#}]*)#([^}]*)}', r'\\href{\1\#\2}', rawtex)
+
+    #adjust references, strip the leading pound sign.
     rawtex = re.sub(r'\\hyperref\[#([^\]]*)\]', r'\\hyperref[\1]', rawtex)
     rawtex = re.sub(r'\\pageref{#([^}]*)}', r'\\pageref{\1}', rawtex)
 
