@@ -63,7 +63,11 @@ class XEP(object):
                                             interim XEP release candidate
         nr (int or str):                The XEP 'number' as in the header of
                                             the XEP, integer or str if it is
-                                            XEP-README or XEP-template
+                                            XEP-README or XEP-template.
+                                            Contains the filename if the XEP is
+                                            in the inbox.
+        nrFormatted (str):              The XEP 'number' in the format '0001' or
+                                            the string value of 'nr'.
         shortname (str or None):        The 'shortname', if the XEP has one,
                                             else None
         status (str):                   The 'status' of the XEP
@@ -113,6 +117,11 @@ class XEP(object):
             except:
                 self.nr = nr
                 self.__printParsingError__("XEP number")
+        if isinstance(self.nr, int):
+            self.nrFormatted = "{:0>4d}".format(self.nr)
+        else:
+            self.nrFormatted = self.nr
+        self.nrFormatted
         shortnameNode = headerNode.getElementsByTagName("shortname")
         if shortnameNode:
             self.shortname = self.__getText__((shortnameNode[0]).childNodes)
@@ -177,12 +186,9 @@ class XEP(object):
         """
         The XEP name as string, e.g: 'XEP-0001'
         """
-        if not self.nr:
-            print self.filename
-        if type(self.nr) is int:
-            return "XEP-{:0>4d}".format(self.nr)
-        else:
-            return "XEP-{0}".format(self.nr)
+        if not self.nrFormatted:
+            return self.filename
+        return "XEP-{0}".format(self.nrFormatted)
 
     def __repr__(self):
         """
@@ -281,3 +287,19 @@ class XEP(object):
                       used.
         """
         xeputils.builder.buildPDF(self, outpath)
+
+    def updateTable(self, xmlfile, htmlfile):
+        """
+        Updates the HTML and XML index tables with the properties of this XEP.
+        Needs an already existing XML index. Overwrites the previous tables.
+
+        Arguments:
+          xmlfile (str):  filename of the XML table to be uptdated.
+          htmlfile (str): filename of the HTML table to be updated.
+        """
+        t = xeputils.xeptable.XEPTable(xmlfile)
+        t.updateXEP(self)
+        t.writeXMLTable(xmlfile)
+        t.writeHTMLTable(htmlfile)
+        
+        

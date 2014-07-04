@@ -82,14 +82,9 @@ def buildXHTML(xep, outpath=None):
         inbox = False
         xslpath = xep.path
 
-    # Overloading is great, but sometimes a burden ;-)
-    if type(xep.nr) is int:
-        nr = "{:0>4d}".format(xep.nr)
-    else:
-        nr = "{}".format(xep.nr)
-
     # XHTML
-    outfile = open(os.path.join(outpath, "xep-{}.html".format(nr)), "w")
+    outfile = open(
+        os.path.join(outpath, "xep-{}.html".format(xep.nrFormatted)), "w")
     xsl = os.path.join(xslpath, "xep.xsl")
     p = subprocess.Popen(["xsltproc", xsl, xep.filename],
                           stdout=outfile,
@@ -102,7 +97,7 @@ def buildXHTML(xep, outpath=None):
     # Reference
     if not os.path.exists(os.path.join(outpath, "refs")):
         os.makedirs(os.path.join(outpath, "refs"))
-    outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(nr)), "w")
+    outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(xep.nrFormatted)), "w")
     xsl = os.path.join(xslpath, "ref.xsl")
     p = subprocess.Popen(["xsltproc", xsl, xep.filename],
                           stdout=outfile,
@@ -115,7 +110,7 @@ def buildXHTML(xep, outpath=None):
     # Examples
     if not os.path.exists(os.path.join(outpath, "examples")):
         os.makedirs(os.path.join(outpath, "examples"))
-    outfile = open(os.path.join(outpath, "examples", "{}.xml".format(nr)), "w")
+    outfile = open(os.path.join(outpath, "examples", "{}.xml".format(xep.nrFormatted)), "w")
     xsl = os.path.join(xslpath, "examples.xsl")
     p = subprocess.Popen(["xsltproc", xsl, xep.filename],
                           stdout=outfile,
@@ -159,12 +154,6 @@ def buildPDF(xep, outpath=None):
         shutil.copy(os.path.join(xslpath, fle), temppath)
     shutil.copy(xep.filename, temppath)
 
-    # Overloading is great, but sometimes a burden ;-)
-    if type(xep.nr) is int:
-        nr = "{:0>4d}".format(xep.nr)
-    else:
-        nr = "{}".format(xep.nr)
-
     # save inline images in tempdir
     for (no, img) in enumerate(xep.images):
         up = urlparse.urlparse(img)
@@ -178,7 +167,7 @@ def buildPDF(xep, outpath=None):
             plaindata = base64.b64decode(data)
             mimetype = head.split(';')[0]
             fileext = mimetype.split('/')[1]
-            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}.{2}'.format(nr, no, fileext))
+            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}.{2}'.format(xep.nrFormatted, no, fileext))
             f = open(imgfilename, 'wb')
             f.write(plaindata)
             f.close()
@@ -187,15 +176,15 @@ def buildPDF(xep, outpath=None):
             filename, fileext = os.path.splitext(up.path)
             if not fileext:
                 fileext = ".{}".format(request.info().getsubtype())
-            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}{2}'.format(nr, no, fileext))
+            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}{2}'.format(xep.nrFormatted, no, fileext))
             f = open(imgfilename, 'wb')
             f.write(request.read())
             f.close()
             request.close()
 
     xmlfile = os.path.join(temppath, os.path.basename(xep.filename))
-    texxmlfile = os.path.join(temppath, "xep-{}.tex.xml".format(nr))
-    texfile = os.path.join(temppath, "xep-{}.tex".format(nr))
+    texxmlfile = os.path.join(temppath, "xep-{}.tex.xml".format(xep.nrFormatted))
+    texfile = os.path.join(temppath, "xep-{}.tex".format(xep.nrFormatted))
 
     # prepare for texml processing
     outfile = open(texxmlfile, "w")
@@ -245,5 +234,5 @@ def buildPDF(xep, outpath=None):
             print "Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i)
 
     # move the PDF out of the way and clean up
-    shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(nr)), outpath)
+    shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(xep.nrFormatted)), outpath)
     shutil.rmtree(temppath)

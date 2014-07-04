@@ -60,6 +60,6 @@ print "With images:"
 for i in a.getWithImages():
     i.pprint()
     #i.buildPDF()
+    #i.updateTable("/tmp/all.xml", "/tmp/all.html")
 print "Building all"
 a.buildAll()
-

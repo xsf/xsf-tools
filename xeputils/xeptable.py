@@ -32,120 +32,137 @@
 #
 ## END LICENSE ##
 
-## creates a HTML table (for the human reader) and XML table (for bots)
-class XEPTable:
-	def __init__(self, filename, shortXMLfilename):
-		self.filename = filename
-		self.shortXMLfilename = shortXMLfilename
-		
-		try:
-			self.tableFile = parse(filename)
-		except:
-			impl = getDOMImplementation()
-			self.tableFile = impl.createDocument(None, "table", None)
-			self.tableFile.getElementsByTagName("table")[0].setAttribute("class", "sortable")
-			self.tableFile.getElementsByTagName("table")[0].setAttribute("id", "xeplist")
-			self.tableFile.getElementsByTagName("table")[0].setAttribute("cellspacing", "0")
-			self.tableFile.getElementsByTagName("table")[0].setAttribute("cellpadding", "3")
-			self.tableFile.getElementsByTagName("table")[0].setAttribute("border", "1")
-			
-			header = parseString(
-'''<tr class='xepheader'>
-	<th align='left'>Number</th>
-	<th align='left'>Name</th>
-	<th align='left'>Type</th>
-	<th align='left'>Status</th>
-	<th align='left'>Date</th>
-</tr>''')
-			self.tableFile.getElementsByTagName("table")[0].appendChild(header.getElementsByTagName("tr")[0])
-		
-		try:
-			self.botsFile = parse(shortXMLfilename)
-		except:
-			impl = getDOMImplementation()
-			self.botsFile = impl.createDocument(None, "xeps", None)
+from xml.dom.minidom import parse,parseString,Document,getDOMImplementation
 
-	def save(self):
-		f = open(self.filename, "wb")
-		self.tableFile.getElementsByTagName("table")[0].normalize()
-		f.write(self.tableFile.toxml())
-		f.close()
-		
-		f = open(self.shortXMLfilename, "wb")
-		self.botsFile.getElementsByTagName("xeps")[0].normalize()
-		f.write(self.botsFile.toxml())
-		f.close()
+HTMLTableHeader = """<table border="1" cellpadding="3" cellspacing="0" class="sortable" id="xeplist">
+  <tr class="xepheader">
+    <th align="left">Number</th>
+    <th align="left">Name</th>
+    <th align="left">Type</th>
+    <th align="left">Status</th>
+    <th align="left">Date</th>
+  </tr>"""
 
-	def setXEP(self, info):
-		## set for HTML table
-		rows = self.tableFile.getElementsByTagName("tr")
-		xeprow = 0
-		for row in rows:
-			if row.getAttribute("id") == "xep" + info.getNr():
-				xeprow = row
-				break
-		
-		if xeprow == 0:
-			xeprow = self.tableFile.createElement("tr")
-			self.tableFile.getElementsByTagName("table")[0].appendChild(xeprow)
-			self.tableFile.getElementsByTagName("table")[0].appendChild(self.tableFile.createTextNode('''
-'''))
-			xeprow.setAttribute("id", "xep" + info.getNr())
-			xeprow.setAttribute("class", "tablebody XEP-" + info.getStatus())
-		else:
-			xeprow.setAttribute("class", "tablebody XEP-" + info.getStatus())
-			while(xeprow.hasChildNodes()):
-				xeprow.removeChild(xeprow.firstChild)
-		
-		col = parseString('''<td valign='top'><a href='/extensions/xep-''' + info.getNr() + ".html'>XEP-" + info.getNr() + '''</a> <a href='/extensions/xep-''' + info.getNr() + '''.pdf'>(PDF)</a></td>''')
-		xeprow.appendChild(col.getElementsByTagName("td")[0])
-		
-		col = parseString("<td valign='top'>" + info.getTitle() + "</td>")
-		xeprow.appendChild(col.getElementsByTagName("td")[0])
-		
-		col = parseString("<td valign='top'>" + info.getType() + "</td>")
-		xeprow.appendChild(col.getElementsByTagName("td")[0])
-		
-		col = parseString("<td valign='top'>" + info.getStatus() + "</td>")
-		xeprow.appendChild(col.getElementsByTagName("td")[0])
-		
-		col = parseString("<td valign='top'>" + info.getDate() + "</td>")
-		xeprow.appendChild(col.getElementsByTagName("td")[0])
-		
-		## set for bots file
-		xeps = self.botsFile.getElementsByTagName("xep")
-		xep = 0
-		for xeps_xep in xeps:
-			if xeps_xep.getElementsByTagName("number")[0].firstChild.data == info.getNr():
-				xep = xeps_xep
-				break
-		
-		if xep == 0:
-			xep = self.botsFile.createElement("xep")
-			self.botsFile.getElementsByTagName("xeps")[0].appendChild(xep)
-			self.botsFile.getElementsByTagName("xeps")[0].appendChild(self.botsFile.createTextNode('''
-'''))
-		else:
-			while(xep.hasChildNodes()):
-				xep.removeChild(xep.firstChild)
-		
-		child = parseString("<number>" + info.getNr() + "</number>")
-		xep.appendChild(child.getElementsByTagName("number")[0])
-		
-		child = parseString("<name>" + info.getTitle() + "</name>")
-		xep.appendChild(child.getElementsByTagName("name")[0])
-		
-		child = parseString("<type>" + info.getType() + "</type>")
-		xep.appendChild(child.getElementsByTagName("type")[0])
-		
-		child = parseString("<status>" + info.getStatus() + "</status>")
-		xep.appendChild(child.getElementsByTagName("status")[0])
-		
-		child = parseString("<updated>" + info.getDate() + "</updated>")
-		xep.appendChild(child.getElementsByTagName("updated")[0])
-		
-		child = parseString("<shortname>" + info.getShortname() + "</shortname>")
-		xep.appendChild(child.getElementsByTagName("shortname")[0])
-		
-		child = parseString("<abstract>" + info.getAbstract() + "</abstract>")
-		xep.appendChild(child.getElementsByTagName("abstract")[0])
+HTMLTableRow = """
+  <tr class="tablebody XEP-{status}" id="xep{number}">
+    <td valign="top">
+      <a href="/extensions/xep-{number}.html">XEP-0001</a> <a href="/extensions/xep-{number}.pdf">(PDF)</a>
+    </td>
+    <td valign="top">
+      {name}
+    </td>
+    <td valign="top">
+      {type}
+    </td>
+    <td valign="top">
+      {status}
+    </td>
+    <td valign="top">
+      {updated}
+    </td>
+  </tr>"""
+
+HTMLTableFooter = """
+</table>
+"""
+
+class XEPTable(object):
+    """
+    Creates a HTML table (for the human reader) and XML table (for bots)
+    """
+    def __init__(self, xmlfile=None):
+        """
+        Returns a XEPTable object, to manipulate the XML and HTML index
+        tables of xeps.
+
+        Arguments:
+          xmlfile (str): XML file to read cached data from. Needed to update a
+                         Single XEP in a set of existing indexes.
+        """
+        self.xmlfile = xmlfile
+        if xmlfile:
+            self.doc = parse(xmlfile)
+        else:
+            impl = getDOMImplementation()
+            self.doc = impl.createDocument(None, "xeps", None)
+
+    def updateXEP(self, xep):
+        """
+        If the XEP is already in the table, the XEPTable object will be updated
+        with the properties of the XEP, otherwise a new XEP is added.
+
+        Arguments:
+          xep (xep): the XEP-object to add or update.
+        """
+        props = (("number", xep.nrFormatted),
+                 ("name", xep.title),
+                 ("type", xep.type),
+                 ("status", xep.status),
+                 ("updated", xep.date.date()),
+                 ("shortname", xep.shortname),
+                 ("abstract", xep.abstract))
+        x = self.doc.createElement("xep")
+        update = False
+        for xepNode in self.doc.getElementsByTagName("xep"):
+            if xepNode.getElementsByTagName("number")[0].childNodes[0].data == xep.nrFormatted:
+                x = xepNode
+                update = True
+                break
+        if update:
+            for prop in props:
+                x.getElementsByTagName(prop[0])[0].childNodes[0].data = prop[1]
+        else:
+            for prop in props:
+                p = self.doc.createElement(prop[0])
+                if prop[1]:
+                    t = self.doc.createTextNode(str(prop[1]))
+                else:
+                    t = self.doc.createTextNode("")
+                p.appendChild(t)
+                x.appendChild(p)
+            self.doc.childNodes[0].appendChild(x)
+
+    def writeXMLTable(self, filename):
+        """
+        Outputs the XEP index table in XML format.
+
+        Arguments:
+          filename (str): the filename of the file to output to, will be
+          overwritten.
+        """
+        self.doc.getElementsByTagName("xeps")[0].normalize()
+        f = open(filename, "wb")
+        self.doc.writexml(f)
+        f.close()
+
+    def writeHTMLTable(self, filename):
+        """
+        Outputs the XEP index table in HTML format.
+
+        Arguments:
+          filename (str): the filename of the file to output to, will be
+          overwritten.
+        """
+        html = HTMLTableHeader
+        for xep in self.doc.getElementsByTagName('xep'):
+            atribs = {}
+            # assume there is just one child node and that that is a textnode
+            for atrib in ("status", "number", "name", "type", "status", "updated"):
+                atribs[atrib] = xep.getElementsByTagName(atrib)[0].childNodes[0].data
+            html += HTMLTableRow.format(**atribs)
+        html += HTMLTableFooter
+        f = open(filename, "w")
+        f.write(html)
+        f.close()
+
+    def __str__(self):
+        """
+        The raw XML of the xep table.
+        """
+        return self.doc.toprettyxml()
+
+    def __repr__(self):
+        """
+        The raw XML of the xep table.
+        """
+        return self.__str__()

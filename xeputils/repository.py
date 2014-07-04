@@ -37,12 +37,14 @@ import glob
 import tempfile
 import traceback
 import datetime
+import tarfile
 import xeputils.xep
+import xeputils.xeptable
 
 def prepDir(path=None):
     """
     Utility function, to prepare a directory for e.g. storing the generated
-    XEPs.
+    XEPs. Returns the outpath in use.
 
     Arguments:
       path (str):  The path to prepare, when empty, False or None, a temporary
@@ -63,16 +65,21 @@ class AllXEPs(object):
     """
     Class containing info about all XEP XML files from one directory
     """
-    def __init__(self, directory, allFiles=True):
+    def __init__(self, directory, outpath=None, allFiles=False):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
 
         Arguments:
-            directory (str): Directory to search XEP-files in
-            allFiles (bool): When true, all xml in the directory are parsed
-                             otherwise only the files with the format:
-                             xep-????.xml
+            directory (str): Directory to search XEP-files in.
+            outpath (str):   Directory to place the build XEPs in. Will be
+                             created when non-existing. When empty, False or
+                             None, a temporary directory will be created.
+            allFiles (bool): When true, all xml files in the directory are
+                             parsed otherwise only the files with the format:
+                             xep-????.xml are parsed.
         """
+        self.directory = directory
+        self.outpath = prepDir(outpath)
         self.xeps = []
         if allFiles:
             fltr = '*.xml'
@@ -127,32 +134,66 @@ class AllXEPs(object):
         cutOff = datetime.datetime.now()-datetime.timedelta(days=idle)
         return [x for x in self.xeps if x.status == "Experimental" and x.date < cutOff]
 
-    def buildAll(self, outpath=None):
+    def buildAll(self):
         """
         Generate XHTML and PDF Files for all XEPs, including a XHTML index table
+
+        Argumens:
+          outpath (str): path to write build files to. A temporary directory
+                         will be created when no outpath is provided.
         """
         # ToDo: handle interim XEPs correctly
-        outpath = prepDir(outpath)
         for xep in self.xeps:
-            xep.buildXHTML(outpath)
-            xep.buildPDF(outpath)
-        # ToDo: bundle
-        # ToDo: table
+            xep.buildXHTML(self.outpath)
+            xep.buildPDF(self.outpath)
+        self.buildTables(
+            os.path.join(self.outpath, "xeps.xml"),
+            os.path.join(self.outpath, "xeplist.txt"))
+        self.buildBundle()
 
-    def buildTables(self):
+    def buildTables(self, xmlfile, htmlfile):
         """
-        Generates XHTML and XML index tables of all XEPs
-        """
-        # ToDo
-        pass
+        Generates HTML and XML index tables of all XEPs, overwriting the
+        previous tables.
 
-    def buildBundle(self):
+        Arguments:
+          xmlfile (str):  filename of the file to write the XML table to.
+          htmlfile (str): filename of the file to write the HTML table to.
         """
-        Generates a tar.bz2 file containing PDFs of all published XEPs (not
-        including: XEP-readme and XEP-template).
+        t = xeputils.xeptable.XEPTable()
+        for xep in self.xeps:
+            t.updateXEP(xep)
+        t.writeXMLTable(xmlfile)
+        t.writeHTMLTable(htmlfile)
+
+    def updateHTMLTable(self, xmlfile, htmlfile):
         """
-        # ToDo
-        pass
+        Uses a cached XML XEP table to generate an updated HTML XEP table.
+
+        Arguments:
+          xmlfile (str):  filename of the existing XML file.
+          htmlfile (str): filename of the file to write the HTML table to.
+        """
+        t = xeputils.xeptable.XEPTable(xmlfile)
+        t.writeHTMLTable(htmlfile)
+
+    def buildBundle(self, name="xepbundle"):
+        """
+        Generates a tar.bz2 file containing all PDF files in the out path of
+        this repository. The created tarfile will be:
+            [name].tar.bz2
+
+        Arguments:
+          name (str):      The name of the tarbal, defaults to 'xepbundle'
+        """
+        fltr = os.path.join(os.path.abspath(self.outpath), '*.pdf')
+        files = glob.glob(fltr)
+        files.sort()
+        tar = tarfile.open(os.path.join(self.outpath, "{}.tar.bz2".format(name)),
+                           "w:bz2")
+        for name in files:
+            tar.add(name, arcname="xepbundle/{}".format(os.path.basename(name)))
+        tar.close()
 
 
 # ToDo: get previous version of interim XEP
