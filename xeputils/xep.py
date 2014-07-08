@@ -68,6 +68,9 @@ class XEP(object):
                                             in the inbox.
         nrFormatted (str):              The XEP 'number' in the format '0001' or
                                             the string value of 'nr'.
+        outpath (str or Nont):          The path where build XEPs are stored,
+                                            when None, a temporary path is used.
+        raw (str):                      The raw XML of the XEP as string.
         shortname (str or None):        The 'shortname', if the XEP has one,
                                             else None
         status (str):                   The 'status' of the XEP
@@ -79,7 +82,7 @@ class XEP(object):
                                             document
     """
 
-    def __init__(self, filename_or_xml, parseStr=False):
+    def __init__(self, filename_or_xml, parseStr=False, outpath=None):
         """
         Creates an XEP object.
 
@@ -88,15 +91,21 @@ class XEP(object):
                                         raw XML of the XEP
             parseStr (bool):        Optional, when true, the first argument is parsed as
                                         raw XML
+            outpath (str):          Optional, path to save build XEPs in.
         """
         if parseStr:
-            thexep = parseString(filename_or_xml)
-            self.filename = None
+            self.raw = filename_or_xml
         else:
-            thexep = parse(filename_or_xml)
             self.filename = filename_or_xml
-        self.xep = thexep
-        xepNode = (thexep.getElementsByTagName("xep")[0])
+            f = open(filename_or_xml, 'r')
+            self.raw = f.read()
+            f.close()
+        self.readXEP()
+        self.outpath = outpath
+
+    def readXEP(self):
+        self.xep = parseString(self.raw)
+        xepNode = (self.xep.getElementsByTagName("xep")[0])
         headerNode = (xepNode.getElementsByTagName("header")[0])
         titleNode = (headerNode.getElementsByTagName("title")[0])
         self.title = self.__getText__(titleNode.childNodes)
@@ -223,8 +232,8 @@ class XEP(object):
                text (str):          Text to replace the text of the elemen with
         """
         # EVIL HACK WARNING:
-        # Using a XMP parser to read and write the XEP more or less destroys it, so
-        # we use blunt text replacement to update the element.
+        # Using a XMP parser to read and write the XEP more or less destroys it,
+        # so we use blunt text replacement to update the element.
         f = open(self.filename, 'r')
         xepText = f.read()
         f.close()
@@ -241,6 +250,7 @@ class XEP(object):
         """
         items = self.__dict__.keys()
         items.remove('xep') # no need for this one
+        items.remove('raw') # no need for this one
         items.sort(reverse=True) # hack to get a nicer order
         print self.__str__()
         for item in items:
@@ -268,11 +278,13 @@ class XEP(object):
         Generates a nice formatted XHTML file from the XEP.
 
         Arguments:
-          path (str): The full path were the tree of the generated XEPs should
-                      be build. When unspecified, a temporary directory
-                      directory in systems default temporary file location is
-                      used.
+          outpath (str): The full path were the tree of the generated XEPs should
+                         be build. When unspecified, a temporary directory
+                         directory in systems default temporary file location is
+                         used.
         """
+        if not outpath and self.outpath:
+            outpath=self.outpath
         xeputils.builder.buildXHTML(self, outpath)
 
     def buildPDF(self, outpath=None):
@@ -281,11 +293,13 @@ class XEP(object):
 
 
         Arguments:
-          path (str): The full path were the tree of the generated XEPs should
-                      be build. When unspecified, a temporary directory
-                      directory in systems default temporary file location is
-                      used.
+          outpath (str): The full path were the tree of the generated XEPs should
+                         be build. When unspecified, a temporary directory
+                         directory in systems default temporary file location is
+                         used.
         """
+        if not outpath and self.outpath:
+            outpath=self.outpath
         xeputils.builder.buildPDF(self, outpath)
 
     def updateTable(self, xmlfile, htmlfile):

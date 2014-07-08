@@ -44,22 +44,22 @@ import xeputils.repository
 
 # read current repository
 a = xeputils.repository.AllXEPs(os.getcwd())
-print "Interim:"
-print a.getInterim()
-print "No short name:"
-print a.getNoShortName()
-print "Last Call:"
-print a.getLastCall()
-print "Expired:"
-for i in a.getExpired():
-    print i, i.date
-if a.xeps:
-    print "testing pprint:"
-    a.xeps[0].pprint()
-print "With images:"
-for i in a.getWithImages():
-    i.pprint()
-    #i.buildPDF()
-    #i.updateTable("/tmp/all.xml", "/tmp/all.html")
-print "Building all"
-a.buildAll()
+if 0:
+    print "Interim:"
+    print a.getInterim()
+    print "No short name:"
+    print a.getNoShortName()
+    print "Last Call:"
+    print a.getLastCall()
+    print "Expired:"
+    for i in a.getExpired():
+        print i, i.date
+if 1:
+    print "With images:"
+    for i in a.getWithImages():
+        i.pprint()
+        i.buildPDF()
+        #i.updateTable("/tmp/all.xml", "/tmp/all.html")
+if 0:
+    print "Building all"
+    a.buildAll()

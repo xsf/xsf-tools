@@ -90,7 +90,7 @@ class AllXEPs(object):
         files.sort()
         for fle in files:
             try:
-                self.xeps.append(xeputils.xep.XEP(fle))
+                self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath))
             except:
                 print "Error while parsing {}".format(fle)
                 print "WARNING: XEP is not included"

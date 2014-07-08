@@ -86,10 +86,11 @@ def buildXHTML(xep, outpath=None):
     outfile = open(
         os.path.join(outpath, "xep-{}.html".format(xep.nrFormatted)), "w")
     xsl = os.path.join(xslpath, "xep.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, xep.filename],
+    p = subprocess.Popen(["xsltproc", xsl, "-"],
+                          stdin=subprocess.PIPE,
                           stdout=outfile,
                           stderr=subprocess.PIPE)
-    (dummy, error) = p.communicate()
+    (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
         print "Error while generating XHTML for {0}: {1}".format(str(xep), error)
@@ -99,10 +100,11 @@ def buildXHTML(xep, outpath=None):
         os.makedirs(os.path.join(outpath, "refs"))
     outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(xep.nrFormatted)), "w")
     xsl = os.path.join(xslpath, "ref.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, xep.filename],
+    p = subprocess.Popen(["xsltproc", xsl, "-"],
+                          stdin=subprocess.PIPE,
                           stdout=outfile,
                           stderr=subprocess.PIPE)
-    (dummy, error) = p.communicate()
+    (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
         print "Error while generating reference for {0}: {1}".format(str(xep), error)
@@ -112,16 +114,19 @@ def buildXHTML(xep, outpath=None):
         os.makedirs(os.path.join(outpath, "examples"))
     outfile = open(os.path.join(outpath, "examples", "{}.xml".format(xep.nrFormatted)), "w")
     xsl = os.path.join(xslpath, "examples.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, xep.filename],
+    p = subprocess.Popen(["xsltproc", xsl, "-"],
+                          stdin=subprocess.PIPE,
                           stdout=outfile,
                           stderr=subprocess.PIPE)
-    (dummy, error) = p.communicate()
+    (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
         print "Error while generating examples for {0}: {1}".format(str(xep), error)
 
     # The source xml
-    shutil.copy(xep.filename, outpath)
+    outfile = open(os.path.join(outpath, "xep-{}.xml".format(xep.nrFormatted)), "w")
+    outfile.write(xep.raw)
+    outfile.close()
 
     # Cleanup
     if inbox:
@@ -152,7 +157,6 @@ def buildPDF(xep, outpath=None):
                 "deps/trimclip.sty", "deps/adjustbox.sty", "deps/tabu.sty",
                 "deps/tc-pdftex.def", "deps/tc-xetex.def"]:
         shutil.copy(os.path.join(xslpath, fle), temppath)
-    shutil.copy(xep.filename, temppath)
 
     # save inline images in tempdir
     for (no, img) in enumerate(xep.images):
@@ -182,17 +186,17 @@ def buildPDF(xep, outpath=None):
             f.close()
             request.close()
 
-    xmlfile = os.path.join(temppath, os.path.basename(xep.filename))
     texxmlfile = os.path.join(temppath, "xep-{}.tex.xml".format(xep.nrFormatted))
     texfile = os.path.join(temppath, "xep-{}.tex".format(xep.nrFormatted))
 
     # prepare for texml processing
     outfile = open(texxmlfile, "w")
     xsl = os.path.join(temppath, "xep2texml.xsl")
-    p = subprocess.Popen(["xsltproc", xsl, xmlfile],
+    p = subprocess.Popen(["xsltproc", xsl, "-"],
+                          stdin=subprocess.PIPE,
                           stdout=outfile,
                           stderr=subprocess.PIPE)
-    (dummy, error) = p.communicate()
+    (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
         print "Error while generating tex.xml for {0}: {1}".format(str(xep), error)
