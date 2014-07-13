@@ -25,8 +25,9 @@ For building XEPs it right now depends on:
   * texlive-latex-recommended (debian package)
   * tipa (debian package)
 
-For version control it uses GitPython. Debian package python-git, source is:
-https://github.com/gitpython-developers/GitPython
+For version control it right now depends on:
+
+* git (executable binary, debian package git)
 
 Usage (for testscript):
 

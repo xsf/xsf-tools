@@ -104,6 +104,9 @@ class XEP(object):
         self.outpath = outpath
 
     def readXEP(self):
+        """
+        Parses the raw data for further processing.
+        """
         self.xep = parseString(self.raw)
         xepNode = (self.xep.getElementsByTagName("xep")[0])
         headerNode = (xepNode.getElementsByTagName("header")[0])
@@ -315,5 +318,3 @@ class XEP(object):
         t.updateXEP(self)
         t.writeXMLTable(xmlfile)
         t.writeHTMLTable(htmlfile)
-        
-        

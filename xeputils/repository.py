@@ -34,6 +34,7 @@
 
 import os
 import glob
+import subprocess
 import tempfile
 import traceback
 import datetime
@@ -80,6 +81,15 @@ class AllXEPs(object):
         """
         self.directory = directory
         self.outpath = prepDir(outpath)
+        p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             cwd=directory)
+        (out, error) = p.communicate()
+        if error:
+            self.gittoplevel = None
+        else:
+            self.gittoplevel = out.strip()
         self.xeps = []
         if allFiles:
             fltr = '*.xml'
@@ -142,7 +152,7 @@ class AllXEPs(object):
           outpath (str): path to write build files to. A temporary directory
                          will be created when no outpath is provided.
         """
-        # ToDo: handle interim XEPs correctly
+        self.revertInterims()
         for xep in self.xeps:
             xep.buildXHTML(self.outpath)
             xep.buildPDF(self.outpath)
@@ -195,5 +205,34 @@ class AllXEPs(object):
             tar.add(name, arcname="xepbundle/{}".format(os.path.basename(name)))
         tar.close()
 
-
-# ToDo: get previous version of interim XEP
+    def revertInterims(self):
+        """
+        Reverts the interim XEPs to their last non-interim state.
+        """
+        if not self.gittoplevel:
+            print "WARNING: not in a git repository, will be using interim XEPs"
+            return
+        commitIndex = 1
+        while self.getInterim():
+            for interim in self.getInterim():
+                gitref = os.path.relpath(interim.filename, self.gittoplevel)
+                p = subprocess.Popen(["git", "log", "--pretty=format:%H", gitref],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    cwd=self.gittoplevel)
+                (out, error) = p.communicate()
+                if error:
+                    print "WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(interim), error)
+                else:
+                    commits = out.split('\n')
+                    p = subprocess.Popen(["git", "show", "{}:{}".format(commits[commitIndex], gitref)],
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        cwd=self.gittoplevel)
+                    (out, error) = p.communicate()
+                    if error:
+                        print "WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(interim), error)
+                    else:
+                        interim.raw = out
+                        interim.readXEP()
+            commitIndex += 1
