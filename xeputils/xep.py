@@ -82,24 +82,18 @@ class XEP(object):
                                             document
     """
 
-    def __init__(self, filename_or_xml, parseStr=False, outpath=None):
+    def __init__(self, filename, outpath=None):
         """
         Creates an XEP object.
 
         Arguments:
-            filename_or_xml (str):  The filename of the XEP to be read or the
-                                        raw XML of the XEP
-            parseStr (bool):        Optional, when true, the first argument is parsed as
-                                        raw XML
-            outpath (str):          Optional, path to save build XEPs in.
+            filename (str):  The filename of the XEP to be read.
+            outpath (str):   Optional, path to save build XEPs in.
         """
-        if parseStr:
-            self.raw = filename_or_xml
-        else:
-            self.filename = filename_or_xml
-            f = open(filename_or_xml, 'r')
-            self.raw = f.read()
-            f.close()
+        self.filename = os.path.abspath(filename)
+        f = open(self.filename, 'r')
+        self.raw = f.read()
+        f.close()
         self.readXEP()
         self.outpath = outpath
 
@@ -133,7 +127,6 @@ class XEP(object):
             self.nrFormatted = "{:0>4d}".format(self.nr)
         else:
             self.nrFormatted = self.nr
-        self.nrFormatted
         shortnameNode = headerNode.getElementsByTagName("shortname")
         if shortnameNode:
             self.shortname = self.__getText__((shortnameNode[0]).childNodes)

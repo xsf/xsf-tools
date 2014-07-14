@@ -238,5 +238,6 @@ def buildPDF(xep, outpath=None):
             print "Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i)
 
     # move the PDF out of the way and clean up
+    # ToDo: handle failure in building properly
     shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(xep.nrFormatted)), outpath)
     shutil.rmtree(temppath)
