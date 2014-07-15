@@ -45,6 +45,8 @@ class XEP(object):
     
     Attributes:
         abstract (str):                 The XEP 'abstract'
+        buildErrors (list):             A list of errors that occured while
+                                            building the XEP.
         date (datetime):                The date of the latest revision of
                                             the XEP
         depends (list):                 List of strings containing all specs
@@ -70,6 +72,8 @@ class XEP(object):
                                             the string value of 'nr'.
         outpath (str or Nont):          The path where build XEPs are stored,
                                             when None, a temporary path is used.
+        parseErrors (list):             A list of errors that occured while
+                                            parsing the XEP.
         raw (str):                      The raw XML of the XEP as string.
         shortname (str or None):        The 'shortname', if the XEP has one,
                                             else None
@@ -94,8 +98,10 @@ class XEP(object):
         f = open(self.filename, 'r')
         self.raw = f.read()
         f.close()
-        self.readXEP()
         self.outpath = outpath
+        self.buildErrors=[]
+        self.parseErrors=[]
+        self.readXEP()
 
     def readXEP(self):
         """
@@ -110,10 +116,10 @@ class XEP(object):
         self.path, fle = os.path.split(self.filename)
         if os.path.basename(self.path) == 'inbox' or fle == "xep-template.xml":
             # these should have 'xxxx' as number
-            if not nr == "xxxx":
-                print "Invalid value for XEP-number ({0}) while parsing protoXEP.".format(nr)
-                print "  XEP file: {}".format(self.filename)
-                print
+            if not (nr == "xxxx" or nr == "XXXX"):
+                e = "Invalid value for XEP-number ({0}) while parsing protoXEP.\n".format(nr)
+                e += "  XEP file: {}".format(self.filename)
+                self.parseErrors.append(e)
             self.nr = fle[:-4]
         elif fle == "xep-README.xml" and nr == "README":
             self.nr = nr
@@ -122,7 +128,7 @@ class XEP(object):
                 self.nr = int(nr)
             except:
                 self.nr = nr
-                self.__printParsingError__("XEP number")
+                self.__processParsingError__("XEP number")
         if isinstance(self.nr, int):
             self.nrFormatted = "{:0>4d}".format(self.nr)
         else:
@@ -144,7 +150,7 @@ class XEP(object):
                 self.lastcall = datetime.datetime.strptime(lastcallString,"%Y-%m-%d")
             except:
                 self.lastcall = False
-                self.__printParsingError__("last call")
+                self.__processParsingError__("last call")
         else:
             self.lastcall = False
         self.type = self.__getText__((headerNode.getElementsByTagName("type")[0]).childNodes)
@@ -159,13 +165,13 @@ class XEP(object):
             self.date = datetime.datetime.strptime(dateString,"%Y-%m-%d")
         except:
             self.date = datetime.datetime.now()
-            self.__printParsingError__("date")
+            self.__processParsingError__("date")
         self.version = self.__getText__((revNode.getElementsByTagName("version")[0]).childNodes)
         try:
             self.majorVersion = int(self.version.split('.')[0])
         except:
             self.majorVersion = 0
-            self.__printParsingError__("major version")
+            self.__processParsingError__("major version")
         try:
             self.minorVersion = int(self.version.split('.')[1])
         except ValueError:
@@ -173,7 +179,7 @@ class XEP(object):
                 self.minorVersion = self.version.split('.')[1]
             else:
                 self.minorVersion = 0
-                self.__printParsingError__("major version")
+                self.__processParsingError__("major version")
                 
         depNode = headerNode.getElementsByTagName("dependencies")
         self.depends = []
@@ -201,14 +207,14 @@ class XEP(object):
         """
         return self.__str__()
 
-    def __printParsingError__(self, valuedescription):
+    def __processParsingError__(self, valuedescription):
         """
-        Utility function, Prints a nice message when some value doesn't parse.
+        Utility function, keeps track of of values that didn't parse ok.
         """
-        print "Invalid value for {0} while parsing {1}, setting to a default.".format(valuedescription, str(self))
-        print "  XEP file: {}".format(self.filename)
-        print "  Error: {}".format(sys.exc_info()[1])
-        print
+        e = "Invalid value for {0} while parsing {1}, setting to a default.\n".format(valuedescription, str(self))
+        e += "  XEP file: {}\n".format(self.filename)
+        e += "  Error: {}\n".format(sys.exc_info()[1])
+        self.parseErrors.append(e)
 
     def __getText__(self, nodelist):
         """Utility function, reads content of all textnodes into one string"""
@@ -269,34 +275,37 @@ class XEP(object):
         replaceElementText(self.filename, "status", "Deferred")
         self.status = "Deferred"
 
-    def buildXHTML(self, outpath=None):
+    def buildXHTML(self, outpath=None, xslpath=None):
         """
         Generates a nice formatted XHTML file from the XEP.
 
         Arguments:
-          outpath (str): The full path were the tree of the generated XEPs should
-                         be build. When unspecified, a temporary directory
-                         directory in systems default temporary file location is
-                         used.
+          path (str):       The full path were the tree of the generated XEPs should
+                            be build. When unspecified, a temporary directory in the
+                            systems default temporary file location is used.
+          xslpath (str):    The path where the xsl stylesheets can be found. When
+                            not specified a directory based on the xep file location
+                            is guessed.
         """
         if not outpath and self.outpath:
             outpath=self.outpath
-        xeputils.builder.buildXHTML(self, outpath)
+        xeputils.builder.buildXHTML(self, outpath, xslpath)
 
-    def buildPDF(self, outpath=None):
+    def buildPDF(self, outpath=None, xslpath=None):
         """
         Generates a nice formatted PDF file from the XEP.
 
-
         Arguments:
-          outpath (str): The full path were the tree of the generated XEPs should
-                         be build. When unspecified, a temporary directory
-                         directory in systems default temporary file location is
-                         used.
+          path (str):       The full path were the tree of the generated XEPs should
+                            be build. When unspecified, a temporary directory in the
+                            systems default temporary file location is used.
+          xslpath (str):    The path where the xsl stylesheets can be found. When
+                            not specified a directory based on the xep file location
+                            is guessed.
         """
         if not outpath and self.outpath:
             outpath=self.outpath
-        xeputils.builder.buildPDF(self, outpath)
+        xeputils.builder.buildPDF(self, outpath, xslpath)
 
     def updateTable(self, xmlfile, htmlfile):
         """

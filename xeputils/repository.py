@@ -59,7 +59,7 @@ def prepDir(path=None):
     else:
         # Do something innocent when no path is provided
         path = tempfile.mkdtemp(prefix='XEPs_')
-    print "creating {}".format(path)
+    print "creating {} for output".format(path)
     return path
 
 class AllXEPs(object):
@@ -81,6 +81,7 @@ class AllXEPs(object):
         """
         self.directory = directory
         self.outpath = prepDir(outpath)
+        self.errors = []
         p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
@@ -102,9 +103,11 @@ class AllXEPs(object):
             try:
                 self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath))
             except:
-                print "Error while parsing {}".format(fle)
-                print "WARNING: XEP is not included"
-                print traceback.format_exc()
+                e = "Error while parsing {}\n".format(fle)
+                e += "WARNING: XEP is not included\n"
+                e += traceback.format_exc()
+                self.errors.append(e)
+                
 
     def getInterim(self):
         """
@@ -143,6 +146,24 @@ class AllXEPs(object):
         """
         cutOff = datetime.datetime.now()-datetime.timedelta(days=idle)
         return [x for x in self.xeps if x.status == "Experimental" and x.date < cutOff]
+
+    def getErrors(self):
+        """
+        Returns list with generic errors while processing the repository
+        """
+        return self.errors
+
+    def getBuildErrors(self):
+        """
+        Returns list with XEP objects that met errors while building
+        """
+        return [x for x in self.xeps if x.buildErrors]
+
+    def getParseErrors(self):
+        """
+        Returns list with XEP objects that met errors while parsing
+        """
+        return [x for x in self.xeps if x.parseErrors]
 
     def buildAll(self):
         """
@@ -210,7 +231,7 @@ class AllXEPs(object):
         Reverts the interim XEPs to their last non-interim state.
         """
         if not self.gittoplevel:
-            print "WARNING: not in a git repository, will be using interim XEPs"
+            self.errors.append("WARNING: not in a git repository, will be using interim XEPs")
             return
         commitIndex = 1
         while self.getInterim():
@@ -222,7 +243,7 @@ class AllXEPs(object):
                                     cwd=self.gittoplevel)
                 (out, error) = p.communicate()
                 if error:
-                    print "WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(interim), error)
+                    interim.buildErrors.append("WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(interim), error))
                 else:
                     commits = out.split('\n')
                     p = subprocess.Popen(["git", "show", "{}:{}".format(commits[commitIndex], gitref)],
@@ -231,8 +252,36 @@ class AllXEPs(object):
                                         cwd=self.gittoplevel)
                     (out, error) = p.communicate()
                     if error:
-                        print "WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(interim), error)
+                        interim.buildErrors.append("WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(interim), error))
                     else:
                         interim.raw = out
                         interim.readXEP()
             commitIndex += 1
+
+    def printErrors(self):
+        """
+        prints a overview of errors that occured while parsing and building the XEPs.
+        """
+        xepsWithErrors = list(set(self.getParseErrors()+self.getBuildErrors()))
+        xepsWithErrors.sort()
+        if self.getErrors() or xepsWithErrors:
+            if self.getErrors():
+                print "********** Generic errors **********"
+                for error in self.getErrors():
+                    print error
+            for xep in xepsWithErrors:
+                print "********** Error report for {} **********".format(str(xep))
+                if xep.parseErrors:
+                    print "********** Parsing Errors **********"
+                    errors = list(set(xep.parseErrors))
+                    for error in errors:
+                        print error
+                if xep.buildErrors:
+                    print "********** Build Errors **********"
+                    for error in xep.buildErrors:
+                        if len(error.splitlines()) > 4:
+                            error = ''.join(error.splitlines()[:4])
+                        print error
+                        
+        else:
+            print "No errors"

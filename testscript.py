@@ -43,7 +43,7 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 import xeputils.repository
 
 # read current repository
-a = xeputils.repository.AllXEPs(os.getcwd())
+a = xeputils.repository.AllXEPs(os.getcwd(), allFiles=True)
 if 0:
     print "Interim:"
     print a.getInterim()
@@ -68,3 +68,4 @@ if 0:
 if 1:
     print "Building all"
     a.buildAll()
+    a.printErrors()

@@ -61,67 +61,72 @@ import re
 import Texml.processor
 import xeputils.repository
 
-def buildXHTML(xep, outpath=None):
+def buildXHTML(xep, outpath=None, xslpath=None):
     """
     Generates a nice formatted XHTML file from the XEP.
 
     Arguments:
-      path (str): The full path were the tree of the generated XEPs should
-                  be build. When unspecified, a temporary directory
-                  directory in systems default temporary file location is
-                  used.
+      path (str):       The full path were the tree of the generated XEPs should
+                        be build. When unspecified, a temporary directory in the
+                        systems default temporary file location is used.
+      xslpath (str):    The path where the xsl stylesheets can be found. When
+                        not specified a directory based on the xep file location
+                        is guessed.
     """
     outpath = xeputils.repository.prepDir(outpath)
-    if os.path.basename(xep.path) == 'inbox':
-        inbox = True
-        xslpath = os.path.abspath(os.path.join(xep.path, ".."))
-        # hack to make sure xep.ent & xep.dtd is in the correct dir
-        shutil.copy(os.path.join(xslpath, "xep.ent"), xep.path)
-        shutil.copy(os.path.join(xslpath, "xep.dtd"), xep.path)
-    else:
-        inbox = False
-        xslpath = xep.path
+    temppath = tempfile.mkdtemp(prefix='XEPbuilder_')
+    if not xslpath:
+        if os.path.basename(xep.path) == 'inbox':
+            xslpath = os.path.abspath(os.path.join(xep.path, ".."))
+        else:
+            xslpath = xep.path
+
+    for fle in ["xep.ent", "xep.dtd", "xep.xsl", "ref.xsl", "examples.xsl"]:
+        shutil.copy(os.path.join(xslpath, fle), temppath)
 
     # XHTML
     outfile = open(
         os.path.join(outpath, "xep-{}.html".format(xep.nrFormatted)), "w")
-    xsl = os.path.join(xslpath, "xep.xsl")
+    xsl = os.path.join(temppath, "xep.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
                           stdin=subprocess.PIPE,
                           stdout=outfile,
-                          stderr=subprocess.PIPE)
+                          stderr=subprocess.PIPE,
+                          cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        print "Error while generating XHTML for {0}: {1}".format(str(xep), error)
+        xep.buildErrors.append("Error while generating XHTML for {0}: {1}".format(str(xep), error))
 
     # Reference
     if not os.path.exists(os.path.join(outpath, "refs")):
         os.makedirs(os.path.join(outpath, "refs"))
     outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(xep.nrFormatted)), "w")
-    xsl = os.path.join(xslpath, "ref.xsl")
+    xsl = os.path.join(temppath, "ref.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
                           stdin=subprocess.PIPE,
                           stdout=outfile,
-                          stderr=subprocess.PIPE)
+                          stderr=subprocess.PIPE,
+                          cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        print "Error while generating reference for {0}: {1}".format(str(xep), error)
+        xep.buildErrors.append("Error while generating reference for {0}: {1}".format(str(xep), error))
 
     # Examples
     if not os.path.exists(os.path.join(outpath, "examples")):
         os.makedirs(os.path.join(outpath, "examples"))
     outfile = open(os.path.join(outpath, "examples", "{}.xml".format(xep.nrFormatted)), "w")
-    xsl = os.path.join(xslpath, "examples.xsl")
+    xsl = os.path.join(temppath, "examples.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
                           stdin=subprocess.PIPE,
                           stdout=outfile,
-                          stderr=subprocess.PIPE)
+                          stderr=subprocess.PIPE,
+                          cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        print "Error while generating examples for {0}: {1}".format(str(xep), error)
+        xep.buildErrors.append("Error while generating examples for {0}: {1}".format(str(xep), error))
 
     # The source xml
     outfile = open(os.path.join(outpath, "xep-{}.xml".format(xep.nrFormatted)), "w")
@@ -129,27 +134,26 @@ def buildXHTML(xep, outpath=None):
     outfile.close()
 
     # Cleanup
-    if inbox:
-        os.remove(os.path.join(xep.path, "xep.ent"))
-        os.remove(os.path.join(xep.path, "xep.dtd"))
+    shutil.rmtree(temppath)
 
-def buildPDF(xep, outpath=None):
+def buildPDF(xep, outpath=None, xslpath=None):
     """
     Generates a nice formatted PDF file from the XEP.
-
-
     Arguments:
-      path (str): The full path were the tree of the generated XEPs should
-                  be build. When unspecified, a temporary directory
-                  directory in systems default temporary file location is
-                  used.
+      path (str):       The full path were the tree of the generated XEPs should
+                        be build. When unspecified, a temporary directory in the
+                        systems default temporary file location is used.
+      xslpath (str):    The path where the xsl stylesheets can be found. When
+                        not specified a directory based on the xep file location
+                        is guessed.
     """
     outpath = xeputils.repository.prepDir(outpath)
     temppath = tempfile.mkdtemp(prefix='XEPbuilder_')
-    if os.path.basename(xep.path) == 'inbox':
-        xslpath = os.path.abspath(os.path.join(xep.path, ".."))
-    else:
-        xslpath = xep.path
+    if not xslpath:
+        if os.path.basename(xep.path) == 'inbox':
+            xslpath = os.path.abspath(os.path.join(xep.path, ".."))
+        else:
+            xslpath = xep.path
 
     for fle in ["xep.ent", "xep.dtd", "xep2texml.xsl", "../images/xmpp.pdf",
                 "../images/xmpp-text.pdf", "deps/adjcalc.sty",
@@ -195,18 +199,19 @@ def buildPDF(xep, outpath=None):
     p = subprocess.Popen(["xsltproc", xsl, "-"],
                           stdin=subprocess.PIPE,
                           stdout=outfile,
-                          stderr=subprocess.PIPE)
+                          stderr=subprocess.PIPE,
+                          cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        print "Error while generating tex.xml for {0}: {1}".format(str(xep), error)
+        xep.buildErrors.append("Error while generating tex.xml for {0}: {1}".format(str(xep), error))
 
     # Create TeX
     outfile = StringIO.StringIO()
     try:
         Texml.processor.process(in_stream=texxmlfile, out_stream=outfile, encoding = "UTF-8")
     except Exception, msg:
-        print "Error while converting xml to tex for {0}: {1}".format(str(xep), msg)
+        xep.buildErrors.append("Error while converting xml to tex for {0}: {1}".format(str(xep), msg))
     finally:
         rawtex = outfile.getvalue()
         outfile.close()
@@ -235,9 +240,11 @@ def buildPDF(xep, outpath=None):
                              cwd=temppath)
         (out, error) = p.communicate()
         if error:
-            print "Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i)
+            xep.buildErrors.append("Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i))
 
     # move the PDF out of the way and clean up
-    # ToDo: handle failure in building properly
-    shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(xep.nrFormatted)), outpath)
+    try:
+        shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(xep.nrFormatted)), outpath)
+    except IOError:
+        xep.buildErrors.append("FATAL: Generating PDF for {} failed.".format(str(xep)))
     shutil.rmtree(temppath)
