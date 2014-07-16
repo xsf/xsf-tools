@@ -32,17 +32,19 @@
 #
 ## END LICENSE ##
 
-from xml.dom.minidom import parse,parseString,Document,getDOMImplementation
+from xml.dom.minidom import parse, parseString, Document, getDOMImplementation
 import sys
 import os
 import re
 import datetime
 import xeputils.builder
 
+
 class XEP(object):
+
     """
     Class describing a XEP, as parsed from its XML
-    
+
     Attributes:
         abstract (str):                 The XEP 'abstract'
         buildErrors (list):             A list of errors that occured while
@@ -99,8 +101,8 @@ class XEP(object):
         self.raw = f.read()
         f.close()
         self.outpath = outpath
-        self.buildErrors=[]
-        self.parseErrors=[]
+        self.buildErrors = []
+        self.parseErrors = []
         self.readXEP()
 
     def readXEP(self):
@@ -112,12 +114,14 @@ class XEP(object):
         headerNode = (xepNode.getElementsByTagName("header")[0])
         titleNode = (headerNode.getElementsByTagName("title")[0])
         self.title = self.__getText__(titleNode.childNodes)
-        nr = self.__getText__((headerNode.getElementsByTagName("number")[0]).childNodes)
+        nr = self.__getText__(
+            (headerNode.getElementsByTagName("number")[0]).childNodes)
         self.path, fle = os.path.split(self.filename)
         if os.path.basename(self.path) == 'inbox' or fle == "xep-template.xml":
             # these should have 'xxxx' as number
             if not (nr == "xxxx" or nr == "XXXX"):
-                e = "Invalid value for XEP-number ({0}) while parsing protoXEP.\n".format(nr)
+                e = "Invalid value for XEP-number ({0}) while parsing protoXEP.\n".format(
+                    nr)
                 e += "  XEP file: {}".format(self.filename)
                 self.parseErrors.append(e)
             self.nr = fle[:-4]
@@ -147,26 +151,30 @@ class XEP(object):
             lastcallNode = lastcallNode[0]
             lastcallString = self.__getText__(lastcallNode.childNodes)
             try:
-                self.lastcall = datetime.datetime.strptime(lastcallString,"%Y-%m-%d")
+                self.lastcall = datetime.datetime.strptime(
+                    lastcallString, "%Y-%m-%d")
             except:
                 self.lastcall = False
                 self.__processParsingError__("last call")
         else:
             self.lastcall = False
-        self.type = self.__getText__((headerNode.getElementsByTagName("type")[0]).childNodes)
+        self.type = self.__getText__(
+            (headerNode.getElementsByTagName("type")[0]).childNodes)
         titleNode = (headerNode.getElementsByTagName("interim"))
         if titleNode:
-            self.interim = True;
+            self.interim = True
         else:
-            self.interim = False;
+            self.interim = False
         revNode = (headerNode.getElementsByTagName("revision")[0])
-        dateString = self.__getText__((revNode.getElementsByTagName("date")[0]).childNodes)
+        dateString = self.__getText__(
+            (revNode.getElementsByTagName("date")[0]).childNodes)
         try:
-            self.date = datetime.datetime.strptime(dateString,"%Y-%m-%d")
+            self.date = datetime.datetime.strptime(dateString, "%Y-%m-%d")
         except:
             self.date = datetime.datetime.now()
             self.__processParsingError__("date")
-        self.version = self.__getText__((revNode.getElementsByTagName("version")[0]).childNodes)
+        self.version = self.__getText__(
+            (revNode.getElementsByTagName("version")[0]).childNodes)
         try:
             self.majorVersion = int(self.version.split('.')[0])
         except:
@@ -180,7 +188,7 @@ class XEP(object):
             else:
                 self.minorVersion = 0
                 self.__processParsingError__("major version")
-                
+
         depNode = headerNode.getElementsByTagName("dependencies")
         self.depends = []
         if depNode:
@@ -189,7 +197,7 @@ class XEP(object):
                 self.depends.append(self.__getText__(dep.childNodes))
 
         imgs = xepNode.getElementsByTagName('img')
-        self.images=[]
+        self.images = []
         for img in imgs:
             self.images.append(img.attributes["src"].value)
 
@@ -211,7 +219,8 @@ class XEP(object):
         """
         Utility function, keeps track of of values that didn't parse ok.
         """
-        e = "Invalid value for {0} while parsing {1}, setting to a default.\n".format(valuedescription, str(self))
+        e = "Invalid value for {0} while parsing {1}, setting to a default.\n".format(
+            valuedescription, str(self))
         e += "  XEP file: {}\n".format(self.filename)
         e += "  Error: {}\n".format(sys.exc_info()[1])
         self.parseErrors.append(e)
@@ -251,9 +260,9 @@ class XEP(object):
         Prints a nice overview of the parsed info of the XEP.
         """
         items = self.__dict__.keys()
-        items.remove('xep') # no need for this one
-        items.remove('raw') # no need for this one
-        items.sort(reverse=True) # hack to get a nicer order
+        items.remove('xep')  # no need for this one
+        items.remove('raw')  # no need for this one
+        items.sort(reverse=True)  # hack to get a nicer order
         print self.__str__()
         for item in items:
             if item == "images":
@@ -261,7 +270,8 @@ class XEP(object):
                 for img in self.__dict__[item]:
                     if img[:10] == "data:image":
                         (imgmeta, imgdata) = img.split(',', 1)
-                        imgs.append("{0} ({1} bytes)".format(imgmeta, len(imgdata)))
+                        imgs.append(
+                            "{0} ({1} bytes)".format(imgmeta, len(imgdata)))
                     else:
                         imgs.append(img)
                 print "  {:<18}  {}".format(item, imgs)
@@ -288,7 +298,7 @@ class XEP(object):
                             is guessed.
         """
         if not outpath and self.outpath:
-            outpath=self.outpath
+            outpath = self.outpath
         xeputils.builder.buildXHTML(self, outpath, xslpath)
 
     def buildPDF(self, outpath=None, xslpath=None):
@@ -304,7 +314,7 @@ class XEP(object):
                             is guessed.
         """
         if not outpath and self.outpath:
-            outpath=self.outpath
+            outpath = self.outpath
         xeputils.builder.buildPDF(self, outpath, xslpath)
 
     def updateTable(self, xmlfile, htmlfile):

@@ -61,6 +61,7 @@ import re
 import Texml.processor
 import xeputils.repository
 
+
 def buildXHTML(xep, outpath=None, xslpath=None):
     """
     Generates a nice formatted XHTML file from the XEP.
@@ -89,52 +90,59 @@ def buildXHTML(xep, outpath=None, xslpath=None):
         os.path.join(outpath, "xep-{}.html".format(xep.nrFormatted)), "w")
     xsl = os.path.join(temppath, "xep.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
-                          stdin=subprocess.PIPE,
-                          stdout=outfile,
-                          stderr=subprocess.PIPE,
-                          cwd=temppath)
+                         stdin=subprocess.PIPE,
+                         stdout=outfile,
+                         stderr=subprocess.PIPE,
+                         cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        xep.buildErrors.append("Error while generating XHTML for {0}: {1}".format(str(xep), error))
+        xep.buildErrors.append(
+            "Error while generating XHTML for {0}: {1}".format(str(xep), error))
 
     # Reference
     if not os.path.exists(os.path.join(outpath, "refs")):
         os.makedirs(os.path.join(outpath, "refs"))
-    outfile = open(os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(xep.nrFormatted)), "w")
+    outfile = open(
+        os.path.join(outpath, "refs", "reference.XSF.XEP-{}.xml".format(xep.nrFormatted)), "w")
     xsl = os.path.join(temppath, "ref.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
-                          stdin=subprocess.PIPE,
-                          stdout=outfile,
-                          stderr=subprocess.PIPE,
-                          cwd=temppath)
+                         stdin=subprocess.PIPE,
+                         stdout=outfile,
+                         stderr=subprocess.PIPE,
+                         cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        xep.buildErrors.append("Error while generating reference for {0}: {1}".format(str(xep), error))
+        xep.buildErrors.append(
+            "Error while generating reference for {0}: {1}".format(str(xep), error))
 
     # Examples
     if not os.path.exists(os.path.join(outpath, "examples")):
         os.makedirs(os.path.join(outpath, "examples"))
-    outfile = open(os.path.join(outpath, "examples", "{}.xml".format(xep.nrFormatted)), "w")
+    outfile = open(
+        os.path.join(outpath, "examples", "{}.xml".format(xep.nrFormatted)), "w")
     xsl = os.path.join(temppath, "examples.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
-                          stdin=subprocess.PIPE,
-                          stdout=outfile,
-                          stderr=subprocess.PIPE,
-                          cwd=temppath)
+                         stdin=subprocess.PIPE,
+                         stdout=outfile,
+                         stderr=subprocess.PIPE,
+                         cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        xep.buildErrors.append("Error while generating examples for {0}: {1}".format(str(xep), error))
+        xep.buildErrors.append(
+            "Error while generating examples for {0}: {1}".format(str(xep), error))
 
     # The source xml
-    outfile = open(os.path.join(outpath, "xep-{}.xml".format(xep.nrFormatted)), "w")
+    outfile = open(
+        os.path.join(outpath, "xep-{}.xml".format(xep.nrFormatted)), "w")
     outfile.write(xep.raw)
     outfile.close()
 
     # Cleanup
     shutil.rmtree(temppath)
+
 
 def buildPDF(xep, outpath=None, xslpath=None):
     """
@@ -171,11 +179,13 @@ def buildPDF(xep, outpath=None, xslpath=None):
             # and encoding. I love the idea, but something tells me we will only
             # see these:
             if not head in ['image/png;base64', 'image/jpeg;base64']:
-                raise Exception("Unknown encoding for inline image in {0}: {1}".format(str(xep), head))
+                raise Exception(
+                    "Unknown encoding for inline image in {0}: {1}".format(str(xep), head))
             plaindata = base64.b64decode(data)
             mimetype = head.split(';')[0]
             fileext = mimetype.split('/')[1]
-            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}.{2}'.format(xep.nrFormatted, no, fileext))
+            imgfilename = os.path.join(
+                temppath, 'inlineimage-{0}-{1:d}.{2}'.format(xep.nrFormatted, no, fileext))
             f = open(imgfilename, 'wb')
             f.write(plaindata)
             f.close()
@@ -184,34 +194,39 @@ def buildPDF(xep, outpath=None, xslpath=None):
             filename, fileext = os.path.splitext(up.path)
             if not fileext:
                 fileext = ".{}".format(request.info().getsubtype())
-            imgfilename = os.path.join(temppath, 'inlineimage-{0}-{1:d}{2}'.format(xep.nrFormatted, no, fileext))
+            imgfilename = os.path.join(
+                temppath, 'inlineimage-{0}-{1:d}{2}'.format(xep.nrFormatted, no, fileext))
             f = open(imgfilename, 'wb')
             f.write(request.read())
             f.close()
             request.close()
 
-    texxmlfile = os.path.join(temppath, "xep-{}.tex.xml".format(xep.nrFormatted))
+    texxmlfile = os.path.join(
+        temppath, "xep-{}.tex.xml".format(xep.nrFormatted))
     texfile = os.path.join(temppath, "xep-{}.tex".format(xep.nrFormatted))
 
     # prepare for texml processing
     outfile = open(texxmlfile, "w")
     xsl = os.path.join(temppath, "xep2texml.xsl")
     p = subprocess.Popen(["xsltproc", xsl, "-"],
-                          stdin=subprocess.PIPE,
-                          stdout=outfile,
-                          stderr=subprocess.PIPE,
-                          cwd=temppath)
+                         stdin=subprocess.PIPE,
+                         stdout=outfile,
+                         stderr=subprocess.PIPE,
+                         cwd=temppath)
     (dummy, error) = p.communicate(xep.raw)
     outfile.close()
     if error:
-        xep.buildErrors.append("Error while generating tex.xml for {0}: {1}".format(str(xep), error))
+        xep.buildErrors.append(
+            "Error while generating tex.xml for {0}: {1}".format(str(xep), error))
 
     # Create TeX
     outfile = StringIO.StringIO()
     try:
-        Texml.processor.process(in_stream=texxmlfile, out_stream=outfile, encoding = "UTF-8")
-    except Exception, msg:
-        xep.buildErrors.append("Error while converting xml to tex for {0}: {1}".format(str(xep), msg))
+        Texml.processor.process(
+            in_stream=texxmlfile, out_stream=outfile, encoding="UTF-8")
+    except Exception as msg:
+        xep.buildErrors.append(
+            "Error while converting xml to tex for {0}: {1}".format(str(xep), msg))
     finally:
         rawtex = outfile.getvalue()
         outfile.close()
@@ -223,7 +238,7 @@ def buildPDF(xep, outpath=None, xslpath=None):
     # and escape the pond sign in the href
     rawtex = re.sub(r'\\href{([^#}]*)#([^}]*)}', r'\\href{\1\#\2}', rawtex)
 
-    #adjust references, strip the leading pound sign.
+    # adjust references, strip the leading pound sign.
     rawtex = re.sub(r'\\hyperref\[#([^\]]*)\]', r'\\hyperref[\1]', rawtex)
     rawtex = re.sub(r'\\pageref{#([^}]*)}', r'\\pageref{\1}', rawtex)
 
@@ -240,11 +255,14 @@ def buildPDF(xep, outpath=None, xslpath=None):
                              cwd=temppath)
         (out, error) = p.communicate()
         if error:
-            xep.buildErrors.append("Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i))
+            xep.buildErrors.append(
+                "Error while generating PDF for {0}: {1} (pass {2})".format(str(xep), error, i))
 
     # move the PDF out of the way and clean up
     try:
-        shutil.copy(os.path.join(temppath, "xep-{}.pdf".format(xep.nrFormatted)), outpath)
+        shutil.copy(
+            os.path.join(temppath, "xep-{}.pdf".format(xep.nrFormatted)), outpath)
     except IOError:
-        xep.buildErrors.append("FATAL: Generating PDF for {} failed.".format(str(xep)))
+        xep.buildErrors.append(
+            "FATAL: Generating PDF for {} failed.".format(str(xep)))
     shutil.rmtree(temppath)

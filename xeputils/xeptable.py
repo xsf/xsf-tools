@@ -32,7 +32,7 @@
 #
 ## END LICENSE ##
 
-from xml.dom.minidom import parse,parseString,Document,getDOMImplementation
+from xml.dom.minidom import parse, parseString, Document, getDOMImplementation
 
 HTMLTableHeader = """<table border="1" cellpadding="3" cellspacing="0" class="sortable" id="xeplist">
   <tr class="xepheader">
@@ -66,10 +66,13 @@ HTMLTableFooter = """
 </table>
 """
 
+
 class XEPTable(object):
+
     """
     Creates a HTML table (for the human reader) and XML table (for bots)
     """
+
     def __init__(self, xmlfile=None):
         """
         Returns a XEPTable object, to manipulate the XML and HTML index
@@ -148,7 +151,8 @@ class XEPTable(object):
             atribs = {}
             # assume there is just one child node and that that is a textnode
             for atrib in ("status", "number", "name", "type", "status", "updated"):
-                atribs[atrib] = xep.getElementsByTagName(atrib)[0].childNodes[0].data
+                atribs[atrib] = xep.getElementsByTagName(
+                    atrib)[0].childNodes[0].data
             html += HTMLTableRow.format(**atribs)
         html += HTMLTableFooter
         f = open(filename, "w")

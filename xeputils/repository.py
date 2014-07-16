@@ -42,6 +42,7 @@ import tarfile
 import xeputils.xep
 import xeputils.xeptable
 
+
 def prepDir(path=None):
     """
     Utility function, to prepare a directory for e.g. storing the generated
@@ -62,10 +63,13 @@ def prepDir(path=None):
     print "creating {} for output".format(path)
     return path
 
+
 class AllXEPs(object):
+
     """
     Class containing info about all XEP XML files from one directory
     """
+
     def __init__(self, directory, outpath=None, allFiles=False):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
@@ -97,8 +101,7 @@ class AllXEPs(object):
         else:
             fltr = 'xep-????.xml'
         fltr = os.path.join(os.path.abspath(directory), fltr)
-        files = glob.glob(fltr)
-        files.sort()
+        files = sorted(glob.glob(fltr))
         for fle in files:
             try:
                 self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath))
@@ -107,7 +110,6 @@ class AllXEPs(object):
                 e += "WARNING: XEP is not included\n"
                 e += traceback.format_exc()
                 self.errors.append(e)
-                
 
     def getInterim(self):
         """
@@ -128,7 +130,7 @@ class AllXEPs(object):
         Mainly for testing purposes.
         """
         return [x for x in self.xeps if x.images]
-      
+
     def getLastCall(self):
         """
         Returns list with XEP objects of all XEPs that have a last call.
@@ -144,7 +146,7 @@ class AllXEPs(object):
           idle (int): optional number of days before an experimental XEP expires
                       defaults to 365 days
         """
-        cutOff = datetime.datetime.now()-datetime.timedelta(days=idle)
+        cutOff = datetime.datetime.now() - datetime.timedelta(days=idle)
         return [x for x in self.xeps if x.status == "Experimental" and x.date < cutOff]
 
     def getErrors(self):
@@ -218,12 +220,13 @@ class AllXEPs(object):
           name (str):      The name of the tarbal, defaults to 'xepbundle'
         """
         fltr = os.path.join(os.path.abspath(self.outpath), '*.pdf')
-        files = glob.glob(fltr)
-        files.sort()
-        tar = tarfile.open(os.path.join(self.outpath, "{}.tar.bz2".format(name)),
-                           "w:bz2")
+        files = sorted(glob.glob(fltr))
+        tar = tarfile.open(
+            os.path.join(self.outpath, "{}.tar.bz2".format(name)),
+            "w:bz2")
         for name in files:
-            tar.add(name, arcname="xepbundle/{}".format(os.path.basename(name)))
+            tar.add(
+                name, arcname="xepbundle/{}".format(os.path.basename(name)))
         tar.close()
 
     def revertInterims(self):
@@ -231,28 +234,34 @@ class AllXEPs(object):
         Reverts the interim XEPs to their last non-interim state.
         """
         if not self.gittoplevel:
-            self.errors.append("WARNING: not in a git repository, will be using interim XEPs")
+            self.errors.append(
+                "WARNING: not in a git repository, will be using interim XEPs")
             return
         commitIndex = 1
         while self.getInterim():
             for interim in self.getInterim():
                 gitref = os.path.relpath(interim.filename, self.gittoplevel)
-                p = subprocess.Popen(["git", "log", "--pretty=format:%H", gitref],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    cwd=self.gittoplevel)
+                p = subprocess.Popen(
+                    ["git", "log", "--pretty=format:%H", gitref],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    cwd=self.gittoplevel)
                 (out, error) = p.communicate()
                 if error:
-                    interim.buildErrors.append("WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(interim), error))
+                    interim.buildErrors.append(
+                        "WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(interim), error))
                 else:
                     commits = out.split('\n')
-                    p = subprocess.Popen(["git", "show", "{}:{}".format(commits[commitIndex], gitref)],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        cwd=self.gittoplevel)
+                    p = subprocess.Popen(
+                        ["git", "show", "{}:{}".format(
+                            commits[commitIndex], gitref)],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        cwd=self.gittoplevel)
                     (out, error) = p.communicate()
                     if error:
-                        interim.buildErrors.append("WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(interim), error))
+                        interim.buildErrors.append(
+                            "WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(interim), error))
                     else:
                         interim.raw = out
                         interim.readXEP()
@@ -262,26 +271,44 @@ class AllXEPs(object):
         """
         prints a overview of errors that occured while parsing and building the XEPs.
         """
-        xepsWithErrors = list(set(self.getParseErrors()+self.getBuildErrors()))
-        xepsWithErrors.sort()
+        e = self.formatErrors()
+        if e:
+            print e
+        else:
+            print "No errors"
+
+    def formatErrors(self):
+        """
+        If there were any during the parsing or the building of the XEPs, it
+        returns a string with a nicely formatted list of errors, suitable for
+        printing or including in a mail. Returns None if there weren't any
+        errors (either because parsing and building went perfect or because
+        there were no XEPs parsed or build yet).
+        """
+        errorlist = []
+        xepsWithErrors = sorted(
+            set(self.getParseErrors() + self.getBuildErrors()),
+            key=lambda x: str(x))
         if self.getErrors() or xepsWithErrors:
             if self.getErrors():
-                print "********** Generic errors **********"
+                errorlist.append("********** Generic errors **********")
                 for error in self.getErrors():
-                    print error
+                    errorlist.append(error)
             for xep in xepsWithErrors:
-                print "********** Error report for {} **********".format(str(xep))
+                errorlist.append(
+                    "********** Error report for {} **********".format(str(xep)))
                 if xep.parseErrors:
-                    print "********** Parsing Errors **********"
+                    errorlist.append("********** Parsing Errors **********")
                     errors = list(set(xep.parseErrors))
                     for error in errors:
-                        print error
+                        errorlist.append(error)
                 if xep.buildErrors:
-                    print "********** Build Errors **********"
+                    errorlist.append("********** Build Errors **********")
                     for error in xep.buildErrors:
                         if len(error.splitlines()) > 4:
                             error = ''.join(error.splitlines()[:4])
-                        print error
-                        
+                        errorlist.append(error)
+            return '\n'.join(errorlist)
         else:
-            print "No errors"
+            return None
+        
