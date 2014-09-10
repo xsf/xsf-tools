@@ -41,9 +41,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 import xeputils.repository
+import xeputils.config
 
-# read current repository
-a = xeputils.repository.AllXEPs(os.getcwd(), allFiles=True)
+if 0:
+    # read current repository
+    a = xeputils.repository.AllXEPs(os.getcwd(), allFiles=True)
 if 0:
     print "Interim:"
     print a.getInterim()
@@ -65,7 +67,13 @@ if 0:
     a.revertInterims()
     for i in ii:
         i.buildXHTML()
-if 1:
+if 0:
     print "Building all"
     a.buildAll()
     a.printErrors()
+if 1:
+    config = xeputils.config.Config()
+    print config._argdict
+    print config.conffile
+    print config.sendmail
+    print config.mailto
