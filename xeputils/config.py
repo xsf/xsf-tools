@@ -139,6 +139,7 @@ class Config(object):
         --mailserver [SERVER]
         --xeps / -x
         --outpath / -o
+        --xslpath
         """
         self._parser.add_argument("-h", "--help", action='store_true',
                                   help="Print this help.")
@@ -160,6 +161,8 @@ class Config(object):
                                   help="XEPs to parse, each item can either be a filename, a directory or a XEP-number. If a directory is given, all xml files in that directory are processed. If a number is given                                  (in the format of '0001') then it looks for the xml source of that XEP in the current directory. When not given it tries to parse all xml files in the current working directory.")
         self._parser.add_argument("-o", "--outdir", metavar="PATH",
                                   help="Specify directory for build results. Will be created when not existent. A temporary directory will be used when not specified.")
+        self._parser.add_argument("--xslpath", metavar="PATH",
+                                  help="Specify path where to look for the XSL stylesheets and the other build dependencies when building the XEP.")
     def _parse(self):
         """
         Parses the commandline options.

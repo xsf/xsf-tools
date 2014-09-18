@@ -89,15 +89,22 @@ class XEP(object):
                                             document
     """
 
-    def __init__(self, filename, outpath=None):
+    def __init__(self, filename, outpath=None, xslpath=None):
         """
         Creates an XEP object.
 
         Arguments:
             filename (str):  The filename of the XEP to be read.
             outpath (str):   Optional, path to save build XEPs in.
+            xslpath (str):   Directory to look for the XSL stylesheets and the
+                             other build depencies. A sensible guess based on
+                             the XEPs location is made when not suppied.
+
         """
         self.filename = os.path.abspath(filename)
+        self.xslpath = None
+        if xslpath:
+            self.xslpath = os.path.abspath(xslpath)
         # check if we are in a git repository and get the toplevel
         p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"],
                              stdout=subprocess.PIPE,

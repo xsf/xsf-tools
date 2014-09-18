@@ -68,7 +68,7 @@ class AllXEPs(object):
     Class containing info about all XEP XML files specified when instantiating.
     """
 
-    def __init__(self, xeps=None, outpath=None):
+    def __init__(self, xeps=None, outpath=None, xslpath=None):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
 
@@ -84,8 +84,12 @@ class AllXEPs(object):
             outpath (str):   Directory to place the build XEPs in. Will be
                              created when non-existing. When empty, False or
                              None, a temporary directory will be created.
+            xslpath (str):  Directory to look for the XSLT stylesheets and the
+                             other build depencies. A sensible guess based on
+                             the XEPs location is made when not suppied.
         """
         self.outpath = prepDir(outpath)
+        self.xslpath = xslpath
         self.errors = []
         self.xeps = []
         files = []
@@ -106,7 +110,7 @@ class AllXEPs(object):
                 files.append(os.path.abspath(fle))
         for fle in sorted(set(files)):
             try:
-                self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath))
+                self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath, xslpath=self.xslpath))
             except:
                 e = "Error while parsing {}\n".format(fle)
                 e += "WARNING: XEP is not included\n"
@@ -177,8 +181,8 @@ class AllXEPs(object):
         """
         self.revertInterims()
         for xep in sorted(self.xeps):
-            xep.buildXHTML(self.outpath)
-            xep.buildPDF(self.outpath)
+            xep.buildXHTML(self.outpath, self.xslpath)
+            xep.buildPDF(self.outpath, self.xslpath)
         self.buildTables(
             os.path.join(self.outpath, "xeps.xml"),
             os.path.join(self.outpath, "xeplist.txt"))

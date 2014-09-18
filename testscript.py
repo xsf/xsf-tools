@@ -44,7 +44,6 @@ import xeputils.repository
 import xeputils.config
 
 # ToDo:
-# - add option for xslt path
 # - add sending mails
 # - structurize logging
 # - make some sensible scripts to start with
@@ -52,7 +51,7 @@ import xeputils.config
 config = xeputils.config.Config()
 
 if 1:
-    a = xeputils.repository.AllXEPs(config.xeps, config.outdir)
+    a = xeputils.repository.AllXEPs(config.xeps, config.outdir, config.xslpath)
 if 1:
     print "Interim:"
     print a.getInterim()
