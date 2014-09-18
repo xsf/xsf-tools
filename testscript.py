@@ -74,7 +74,7 @@ if 0:
         i.buildXHTML()
 if 1:
     print "Building all"
-    a.buildAll()
+    a.buildAll(showprogress=True)
     a.printErrors()
 if 0:
     print config._argdict

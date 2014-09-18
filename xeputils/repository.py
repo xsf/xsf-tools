@@ -33,6 +33,7 @@
 ## END LICENSE ##
 
 import os
+import sys
 import glob
 import tempfile
 import traceback
@@ -173,20 +174,34 @@ class AllXEPs(object):
         """
         return [x for x in self.xeps if x.parseErrors]
 
-    def buildAll(self):
+    def buildAll(self, showprogress=False):
         """
         Generate XHTML and PDF Files for all XEPs, including a XHTML index
         table and a tarred bundle of generated PDF's.
         Reverts interims before building.
         """
+        if showprogress:
+            sys.stdout.write("\rReverting interm XEPs")
+            sys.stdout.flush()
+            counter = 1
         self.revertInterims()
         for xep in sorted(self.xeps):
+            if showprogress:
+                sys.stdout.write("\rBuilding XEP: ... {:<40}  [{}/{}]".format(xep.filename[-40:], counter, len(self.xeps)))
+                sys.stdout.flush()
+                counter += 1
             xep.buildXHTML(self.outpath, self.xslpath)
             xep.buildPDF(self.outpath, self.xslpath)
+        if showprogress:
+            sys.stdout.write("\rBuilding index table")
+            sys.stdout.flush()
         self.buildTables(
             os.path.join(self.outpath, "xeps.xml"),
             os.path.join(self.outpath, "xeplist.txt"))
         self.buildBundle()
+        if showprogress:
+            sys.stdout.write("\rDone!\n")
+            sys.stdout.flush()
 
     def buildTables(self, xmlfile, htmlfile):
         """
@@ -264,7 +279,7 @@ class AllXEPs(object):
             key=lambda x: str(x))
         if self.getErrors() or xepsWithErrors:
             if self.getErrors():
-                errorlist.append("********** Generic errors **********")
+                errorlist.append("********** Read errors **********")
                 for error in self.getErrors():
                     errorlist.append(error)
             for xep in xepsWithErrors:
