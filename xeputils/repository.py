@@ -114,7 +114,7 @@ class AllXEPs(object):
                 self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath, xslpath=self.xslpath))
             except:
                 e = "Error while parsing {}\n".format(fle)
-                e += "WARNING: XEP is not included\n"
+                e += "FATAL: {} is not included\n".format(fle)
                 e += traceback.format_exc()
                 self.errors.append(e)
 
