@@ -34,7 +34,6 @@
 
 import os
 import glob
-import subprocess
 import tempfile
 import traceback
 import datetime
@@ -65,44 +64,47 @@ def prepDir(path=None):
 
 
 class AllXEPs(object):
-
     """
-    Class containing info about all XEP XML files from one directory
+    Class containing info about all XEP XML files specified when instantiating.
     """
 
-    def __init__(self, directory, outpath=None, allFiles=False):
+    def __init__(self, xeps=None, outpath=None):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
 
         Arguments:
-            directory (str): Directory to search XEP-files in.
+            xeps (list):     XEPs to parse, each item can either be a filename,
+                             a directory or a XEP-number. If a directory is
+                             given, all xml files in that directory are
+                             processed. If a number is given (in the format of
+                             '0001') then it looks for the xml source of that
+                             XEP in the current directory.
+                             If the list is empty or omitted, it tries to parse
+                             all xml files in the current working directory.
             outpath (str):   Directory to place the build XEPs in. Will be
                              created when non-existing. When empty, False or
                              None, a temporary directory will be created.
-            allFiles (bool): When true, all xml files in the directory are
-                             parsed otherwise only the files with the format:
-                             xep-????.xml are parsed.
         """
-        self.directory = directory
         self.outpath = prepDir(outpath)
         self.errors = []
-        p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             cwd=directory)
-        (out, error) = p.communicate()
-        if error:
-            self.gittoplevel = None
-        else:
-            self.gittoplevel = out.strip()
         self.xeps = []
-        if allFiles:
-            fltr = '*.xml'
+        files = []
+        if xeps:
+            for xep in xeps:
+                if os.path.isfile(xep):
+                    files.append(os.path.abspath(xep))
+                elif os.path.isdir(xep):
+                    fltr = os.path.join(os.path.abspath(xep), '*.xml')
+                    files += glob.glob(fltr)
+                else:
+                    if os.path.isfile("xep-{0}.xml".format(xep)):
+                        files.append(os.path.abspath(os.path.join(os.getcwd(),"xep-{0}.xml".format(xep))))
         else:
-            fltr = 'xep-????.xml'
-        fltr = os.path.join(os.path.abspath(directory), fltr)
-        files = sorted(glob.glob(fltr))
-        for fle in files:
+            # no xeps given, try all xml-files in curdir
+            fls = glob.glob(os.path.join(os.getcwd(), '*.xml'))
+            for fle in fls:
+                files.append(os.path.abspath(fle))
+        for fle in sorted(set(files)):
             try:
                 self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath))
             except:
@@ -169,14 +171,12 @@ class AllXEPs(object):
 
     def buildAll(self):
         """
-        Generate XHTML and PDF Files for all XEPs, including a XHTML index table
-
-        Argumens:
-          outpath (str): path to write build files to. A temporary directory
-                         will be created when no outpath is provided.
+        Generate XHTML and PDF Files for all XEPs, including a XHTML index
+        table and a tarred bundle of generated PDF's.
+        Reverts interims before building.
         """
         self.revertInterims()
-        for xep in self.xeps:
+        for xep in sorted(self.xeps):
             xep.buildXHTML(self.outpath)
             xep.buildPDF(self.outpath)
         self.buildTables(
@@ -212,7 +212,7 @@ class AllXEPs(object):
 
     def buildBundle(self, name="xepbundle"):
         """
-        Generates a tar.bz2 file containing all PDF files in the out path of
+        Generates a tar.bz2 file containing all PDF files in the outpath of
         this repository. The created tarfile will be:
             [name].tar.bz2
 
@@ -233,39 +233,8 @@ class AllXEPs(object):
         """
         Reverts the interim XEPs to their last non-interim state.
         """
-        if not self.gittoplevel:
-            self.errors.append(
-                "WARNING: not in a git repository, will be using interim XEPs")
-            return
-        commitIndex = 1
-        while self.getInterim():
-            for interim in self.getInterim():
-                gitref = os.path.relpath(interim.filename, self.gittoplevel)
-                p = subprocess.Popen(
-                    ["git", "log", "--pretty=format:%H", gitref],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    cwd=self.gittoplevel)
-                (out, error) = p.communicate()
-                if error:
-                    interim.buildErrors.append(
-                        "WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(interim), error))
-                else:
-                    commits = out.split('\n')
-                    p = subprocess.Popen(
-                        ["git", "show", "{}:{}".format(
-                            commits[commitIndex], gitref)],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        cwd=self.gittoplevel)
-                    (out, error) = p.communicate()
-                    if error:
-                        interim.buildErrors.append(
-                            "WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(interim), error))
-                    else:
-                        interim.raw = out
-                        interim.readXEP()
-            commitIndex += 1
+        for interim in self.getInterim():
+            interim.revertInterim()
 
     def printErrors(self):
         """

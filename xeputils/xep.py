@@ -37,6 +37,7 @@ import sys
 import os
 import re
 import datetime
+import subprocess
 import xeputils.builder
 
 
@@ -97,6 +98,17 @@ class XEP(object):
             outpath (str):   Optional, path to save build XEPs in.
         """
         self.filename = os.path.abspath(filename)
+        # check if we are in a git repository and get the toplevel
+        p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             cwd=os.path.dirname(self.filename))
+        (out, error) = p.communicate()
+        if error:
+            self.gittoplevel = None
+        else:
+            self.gittoplevel = out.strip()
+        # parse the XEP
         f = open(self.filename, 'r')
         self.raw = f.read()
         f.close()
@@ -124,6 +136,9 @@ class XEP(object):
                     nr)
                 e += "  XEP file: {}".format(self.filename)
                 self.parseErrors.append(e)
+            self.nr = fle[:-4]
+        elif nr == "xxxx" or nr == "XXXX":
+            # apparently a proto-xep in an other place
             self.nr = fle[:-4]
         elif fle == "xep-README.xml" and nr == "README":
             self.nr = nr
@@ -215,6 +230,12 @@ class XEP(object):
         """
         return self.__str__()
 
+    def __lt__(self, other):
+        """
+        Compare two XEPs for sorting
+        """
+        return self.__str__() < other.__str__()
+
     def __processParsingError__(self, valuedescription):
         """
         Utility function, keeps track of of values that didn't parse ok.
@@ -285,12 +306,53 @@ class XEP(object):
         replaceElementText(self.filename, "status", "Deferred")
         self.status = "Deferred"
 
+    def revertInterim(self):
+        """
+        Uses git to revert an interim XEP to its last non-interim state.
+        """
+        if not self.interim:
+            return
+        if not self.gittoplevel:
+            self.buildErrors.append(
+                "WARNING: {0} is not in a git repository, will be using interim XEPs")
+            return
+        gitref = os.path.relpath(self.filename, self.gittoplevel)
+        p = subprocess.Popen(
+            ["git", "log", "--pretty=format:%H", gitref],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=self.gittoplevel)
+        (out, error) = p.communicate()
+        if error:
+            self.buildErrors.append(
+                "WARNING: error reading git log, not reversing interim XEP {}: {}".format(str(self), error))
+            return
+        else:
+            commits = out.split('\n')
+            commitIndex = 1
+            while self.interim:
+                p = subprocess.Popen(
+                    ["git", "show", "{}:{}".format(
+                        commits[commitIndex], gitref)],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    cwd=self.gittoplevel)
+                (out, error) = p.communicate()
+                if error:
+                    self.buildErrors.append(
+                        "WARNING: error reading git blob, not reversing interim XEP {}: {}".format(str(self), error))
+                    return
+                else:
+                    self.raw = out
+                    self.readXEP()
+                commitIndex += 1
+
     def buildXHTML(self, outpath=None, xslpath=None):
         """
         Generates a nice formatted XHTML file from the XEP.
 
         Arguments:
-          path (str):       The full path were the tree of the generated XEPs should
+          outpath (str):    The full path were the tree of the generated XEPs should
                             be build. When unspecified, a temporary directory in the
                             systems default temporary file location is used.
           xslpath (str):    The path where the xsl stylesheets can be found. When
@@ -306,7 +368,7 @@ class XEP(object):
         Generates a nice formatted PDF file from the XEP.
 
         Arguments:
-          path (str):       The full path were the tree of the generated XEPs should
+          outpath (str):    The full path were the tree of the generated XEPs should
                             be build. When unspecified, a temporary directory in the
                             systems default temporary file location is used.
           xslpath (str):    The path where the xsl stylesheets can be found. When

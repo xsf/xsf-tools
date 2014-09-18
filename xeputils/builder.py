@@ -67,7 +67,7 @@ def buildXHTML(xep, outpath=None, xslpath=None):
     Generates a nice formatted XHTML file from the XEP.
 
     Arguments:
-      path (str):       The full path were the tree of the generated XEPs should
+      outpath (str):    The full path were the tree of the generated XEPs should
                         be build. When unspecified, a temporary directory in the
                         systems default temporary file location is used.
       xslpath (str):    The path where the xsl stylesheets can be found. When
@@ -148,7 +148,7 @@ def buildPDF(xep, outpath=None, xslpath=None):
     """
     Generates a nice formatted PDF file from the XEP.
     Arguments:
-      path (str):       The full path were the tree of the generated XEPs should
+      outpath (str):    The full path were the tree of the generated XEPs should
                         be build. When unspecified, a temporary directory in the
                         systems default temporary file location is used.
       xslpath (str):    The path where the xsl stylesheets can be found. When

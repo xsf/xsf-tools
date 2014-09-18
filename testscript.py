@@ -43,10 +43,17 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 import xeputils.repository
 import xeputils.config
 
-if 0:
-    # read current repository
-    a = xeputils.repository.AllXEPs(os.getcwd(), allFiles=True)
-if 0:
+# ToDo:
+# - add option for xslt path
+# - add sending mails
+# - structurize logging
+# - make some sensible scripts to start with
+
+config = xeputils.config.Config()
+
+if 1:
+    a = xeputils.repository.AllXEPs(config.xeps, config.outdir)
+if 1:
     print "Interim:"
     print a.getInterim()
     print "No short name:"
@@ -61,18 +68,16 @@ if 0:
     for i in a.getWithImages():
         i.pprint()
         i.buildPDF()
-        #i.updateTable("/tmp/all.xml", "/tmp/all.html")
 if 0:
     ii = a.getInterim()
     a.revertInterims()
     for i in ii:
         i.buildXHTML()
-if 0:
+if 1:
     print "Building all"
     a.buildAll()
     a.printErrors()
-if 1:
-    config = xeputils.config.Config()
+if 0:
     print config._argdict
     print config.conffile
     print config.sendmail
