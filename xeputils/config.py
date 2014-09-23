@@ -84,7 +84,7 @@ class Config(object):
     See the argparse documentation for the add_argument method.
     """
     _defaults = {
-        "conffile": "config.py",
+        "conffile": "settings.py",
         "logtostdout": True,
         "mailserver": "localhost",
     }
@@ -137,7 +137,7 @@ class Config(object):
         --mailto [E-MAIL ADDRESS] / -t [E-MAIL ADDRESS]
         --mailfrom [E-MAIL ADDRESS] / -f [E-MAIL ADDRESS]
         --logtofile [FILE] / -l [FILE]
-        --logtostdout
+        --nologtostdout
         --logtomail
         --mailserver [SERVER]
         --xeps / -x

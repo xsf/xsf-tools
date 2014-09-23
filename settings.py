@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# File: testscript.py
-# Version: 0.2
+# File: config.py
+# Version: 0.3
 # Description: utility functions for handling XEPs
-# Last Modified: 2014-06-19
+# Last Modified: 2014-09-23
 # Based on scripts by:
 #    Tobias Markmann (tm@ayena.de)
 #    Peter Saint-Andre (stpeter@jabber.org)
@@ -34,52 +34,9 @@
 #
 ## END LICENSE ##
 
-import sys
-import os
-
-try:
-    import xeputils
-except ImportError:
-    # hack to import relative to this script, but don't mess with
-    # the path when nog needed
-    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-import xeputils.repository
-import xeputils.config
-import xeputils.mail
-
-# ToDo:
-# - structurize logging more
-# - make some sensible scripts to start with
-
-config = xeputils.config.Config()
-
-if 1:
-    a = xeputils.repository.AllXEPs(config)
-if 1:
-    print "Interim:"
-    print a.getInterim()
-    print "No short name:"
-    print a.getNoShortName()
-    print "Last Call:"
-    print a.getLastCall()
-    print "Expired:"
-    for i in a.getExpired():
-        print i, i.date
-if 0:
-    print "With images:"
-    for i in a.getWithImages():
-        i.pprint()
-        i.buildPDF()
-if 0:
-    ii = a.getInterim()
-    a.revertInterims()
-    for i in ii:
-        i.buildXHTML()
-if 0:
-    print "Building all"
-    a.buildAll(showprogress=True)
-if 1:
-    a.processErrors()
-if 0:
-    m = xeputils.mail.Deferred(config, a.xeps[0])
-    m.send()
+options = {
+#    "sendmail": True,
+#    "mailfrom": "ubberboss@example.invalid",
+#    "mailto": "editor@example.invalid",
+#    "logtomail": True
+    }
