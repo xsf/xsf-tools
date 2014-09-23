@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 # File: config.py
-# Version: 0.1
+# Version: 0.3
 # Description: utility functions for handling XEPs
-# Last Modified: 2014-07-18
+# Last Modified: 2014-09-23
 # Based on scripts by:
 #    Tobias Markmann (tm@ayena.de)
 #    Peter Saint-Andre (stpeter@jabber.org)
 # Authors:
 #    Winfried Tilanus (winfried@tilanus.com)
 
-# LICENSE ##
+## LICENSE ##
 #
 # Copyright (c) 1999 - 2014 XMPP Standards Foundation
 #
@@ -32,7 +32,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-# END LICENSE ##
+## END LICENSE ##
 
 #!/usr/bin/env python
 import imp
