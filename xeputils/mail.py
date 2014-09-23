@@ -8,7 +8,7 @@
 # Authors:
 #    Winfried Tilanus (winfried@tilanus.com)
 
-## LICENSE ##
+# LICENSE ##
 #
 # Copyright (c) 1999 - 2014 XMPP Standards Foundation
 #
@@ -30,13 +30,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-## END LICENSE ##
+# END LICENSE ##
 
 import smtplib
 import sys
 import datetime
 
+
 class BaseMessage(object):
+
     """Class to be subclassed for sending messages. When sublassing the variable
        "MESSAGETEXT" has to be overwritten. Optionally the method "makeSubject"
        can be overwritten.
@@ -59,6 +61,7 @@ Subject: {subject}
 This is a testmessage about XEP-{xep.nrFormatted} ({xep.title}), please
 ignore.
 """
+
     def __init__(self, config, xep):
         """Create a new message.
            Arguments:
@@ -84,6 +87,7 @@ ignore.
         server.sendmail(self.config.mailfrom, self.config.mailto, msg)
         server.quit()
 
+
 class LogMail():
     MESSAGETEXT = """From: {config.mailfrom}
 To: {config.mailto}
@@ -91,6 +95,7 @@ Subject: There where errors during the run of {script} on {date}
 
 {logs}
 """
+
     def __init__(self, config, logs):
         self.config = config
         self.logs = logs
@@ -103,7 +108,7 @@ Subject: There where errors during the run of {script} on {date}
             logs=self.logs)
         server = smtplib.SMTP(self.config.mailserver)
         server.sendmail(self.config.mailfrom, self.config.mailto, msg)
-        server.quit()        
+        server.quit()
 
 
 class Deferred(BaseMessage):
@@ -119,4 +124,3 @@ URL: http://xmpp.org/extensions/xep-{xep.nrFormatted}.html
 
 If and when a new revision of this XEP is published, its status will be changed back to Experimental.
 """
-

@@ -8,7 +8,7 @@
 # Authors:
 #    Winfried Tilanus (winfried@tilanus.com)
 
-## LICENSE ##
+# LICENSE ##
 #
 # Copyright (c) 1999 - 2014 XMPP Standards Foundation
 #
@@ -30,7 +30,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-## END LICENSE ##
+# END LICENSE ##
 
 """
 Functions for building XHTML and PDF files from XEPs. These have some

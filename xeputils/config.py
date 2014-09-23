@@ -10,7 +10,7 @@
 # Authors:
 #    Winfried Tilanus (winfried@tilanus.com)
 
-## LICENSE ##
+# LICENSE ##
 #
 # Copyright (c) 1999 - 2014 XMPP Standards Foundation
 #
@@ -32,7 +32,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-## END LICENSE ##
+# END LICENSE ##
 
 #!/usr/bin/env python
 import imp
@@ -40,7 +40,9 @@ import os
 import sys
 import argparse
 
+
 class Config(object):
+
     """
     Configuration object.
 
@@ -85,7 +87,7 @@ class Config(object):
         "conffile": "config.py",
         "logtostdout": True,
         "mailserver": "localhost",
-        }
+    }
 
     def __init__(self, parse=True):
         """
@@ -107,7 +109,7 @@ class Config(object):
             self._argdict["conffile"] = self._defaults["conffile"]
         elif not os.path.isfile(self.conffile):
             # don't raise when no file provided on commandline
-            raise IOError, "Configuration file not found"
+            raise IOError("Configuration file not found")
         self._parser.set_defaults(**self._defaults)
         if os.path.isfile(self.conffile):
             conffile = imp.load_source("conffile", self.conffile)
@@ -166,6 +168,7 @@ class Config(object):
                                   help="Specify directory for build results. Will be created when not existent. A temporary directory will be used when not specified.")
         self._parser.add_argument("--xslpath", metavar="PATH",
                                   help="Specify path where to look for the XSL stylesheets and the other build dependencies when building the XEP.")
+
     def _parse(self):
         """
         Parses the commandline options.
@@ -174,4 +177,3 @@ class Config(object):
         if self.help:
             self._parser.print_help()
             sys.exit(1)
-

@@ -8,7 +8,7 @@
 # Authors:
 #    Winfried Tilanus (winfried@tilanus.com)
 
-## LICENSE ##
+# LICENSE ##
 #
 # Copyright (c) 1999 - 2014 XMPP Standards Foundation
 #
@@ -30,7 +30,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-## END LICENSE ##
+# END LICENSE ##
 
 import os
 import sys
@@ -66,6 +66,7 @@ def prepDir(path=None):
 
 
 class AllXEPs(object):
+
     """
     Class containing info about all XEP XML files specified when instantiating.
     """
@@ -105,7 +106,8 @@ class AllXEPs(object):
                     files += glob.glob(fltr)
                 else:
                     if os.path.isfile("xep-{0}.xml".format(xep)):
-                        files.append(os.path.abspath(os.path.join(os.getcwd(),"xep-{0}.xml".format(xep))))
+                        files.append(
+                            os.path.abspath(os.path.join(os.getcwd(), "xep-{0}.xml".format(xep))))
         else:
             # no xeps given, try all xml-files in curdir
             fls = glob.glob(os.path.join(os.getcwd(), '*.xml'))
@@ -114,7 +116,10 @@ class AllXEPs(object):
         # read files to xeps
         for fle in sorted(set(files)):
             try:
-                self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath, xslpath=self.xslpath))
+                self.xeps.append(
+                    xeputils.xep.XEP(fle,
+     outpath=self.outpath,
+     xslpath=self.xslpath))
             except:
                 e = "Error while parsing {}\n".format(fle)
                 e += "FATAL: {} is not included\n".format(fle)
@@ -190,7 +195,8 @@ class AllXEPs(object):
         self.revertInterims()
         for xep in sorted(self.xeps):
             if showprogress:
-                sys.stdout.write("\rBuilding XEP: ... {:<40}  [{}/{}]".format(xep.filename[-40:], counter, len(self.xeps)))
+                sys.stdout.write("\rBuilding XEP: ... {:<40}  [{}/{}]".format(
+                    xep.filename[-40:], counter, len(self.xeps)))
                 sys.stdout.flush()
                 counter += 1
             xep.buildXHTML(self.outpath, self.xslpath)
@@ -318,4 +324,3 @@ class AllXEPs(object):
             return '\n'.join(errorlist)
         else:
             return None
-        
