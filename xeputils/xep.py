@@ -310,8 +310,12 @@ class XEP(object):
         """
         Marks XEP as 'Deferred'
         """
-        replaceElementText(self.filename, "status", "Deferred")
-        self.status = "Deferred"
+        self.replaceElementText("status", "Deferred")
+        # parse the XEP again
+        f = open(self.filename, 'r')
+        self.raw = f.read()
+        f.close()
+        self.readXEP()
 
     def revertInterim(self):
         """

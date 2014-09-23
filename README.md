@@ -29,13 +29,11 @@ For version control it right now depends on:
 
 * git (executable binary, debian package git)
 
-Usage (for testscript):
+Executable scripts in this package:
 
-```
-$ cd extensions
-$ python ../../path_to_scripts/testscript.py
-```
+build.py - builds HTML and PDF from XEP XML sources
+cronjob.py - performs periodical maintanance tasks
+testscript.py - testscript for developers
 
-This testscript reads all XEPs (xml files) in the current directory, performs
-some tests on them and then tries to build them all to HTML and PDF format.
+All scripts have a help function that can be called with '-h'.
 

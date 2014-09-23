@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # File: config.py
 # Version: 0.3
 # Description: utility functions for handling XEPs
@@ -164,7 +162,7 @@ class Config(object):
                                   help="Specify e-mail addresses to send mails to.")
         self._parser.add_argument("-x", "--xeps", metavar="XEP", nargs="+",
                                   help="XEPs to parse, each item can either be a filename, a directory or a XEP-number. If a directory is given, all xml files in that directory are processed. If a number is given                                  (in the format of '0001') then it looks for the xml source of that XEP in the current directory. When not given it tries to parse all xml files in the current working directory.")
-        self._parser.add_argument("-o", "--outdir", metavar="PATH",
+        self._parser.add_argument("-o", "--outpath", metavar="PATH",
                                   help="Specify directory for build results. Will be created when not existent. A temporary directory will be used when not specified.")
         self._parser.add_argument("--xslpath", metavar="PATH",
                                   help="Specify path where to look for the XSL stylesheets and the other build dependencies when building the XEP.")

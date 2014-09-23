@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# File: testscript.py
-# Version: 0.2
+# File: cronjob.py
+# Version: 0.3
 # Description: utility functions for handling XEPs
-# Last Modified: 2014-06-19
+# Last Modified: 2014-09-23
 # Based on scripts by:
 #    Tobias Markmann (tm@ayena.de)
 #    Peter Saint-Andre (stpeter@jabber.org)
@@ -34,6 +34,10 @@
 #
 ## END LICENSE ##
 
+"""
+Periodical tasks for maintaining XEPs.
+"""
+
 import sys
 import os
 
@@ -45,40 +49,28 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
     import xeputils
 
-# ToDo:
-# - structurize logging more
-
 config = xeputils.config.Config()
 
-if 1:
-    a = xeputils.repository.AllXEPs(config)
-if 1:
-    print "Interim:"
-    print a.getInterim()
-    print "No short name:"
-    print a.getNoShortName()
-    print "Last Call:"
-    print a.getLastCall()
-    print "Expired:"
-    for i in a.getExpired():
-        print i, i.date
-    print "Table:"
-    print a.xeptable
-if 0:
-    print "With images:"
-    for i in a.getWithImages():
-        i.pprint()
-        i.buildPDF()
-if 0:
-    ii = a.getInterim()
-    a.revertInterims()
-    for i in ii:
-        i.buildXHTML()
-if 0:
-    print "Building all"
-    a.buildAll(showprogress=True)
-if 1:
-    a.processErrors()
-if 0:
-    m = xeputils.mail.Deferred(config, a.xeps[0])
-    m.send()
+# read the XEPs
+xeps = xeputils.repository.AllXEPs(config)
+
+# try to find the XEP table:
+
+# Defer expired XEPs
+expired = xeps.getExpired()
+for x in expired:
+    x.setDeferred()
+    x.buildXHTML()
+    x.buildPDF()
+    if config.sendmail:
+        m = xeputils.mail.Deferred(config, x)
+        m.send()
+    if xeps.xeptable:
+        x.updateTable(xeps.xeptable,
+                     os.path.join(xeps.outpath, "xeplist.txt"))
+
+# ToDo:
+# - Commit changes to git
+# - copy to attic
+
+xeps.processErrors()

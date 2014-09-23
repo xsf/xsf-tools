@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-# File: config.py
+# File: settings.py
 # Version: 0.3
 # Description: utility functions for handling XEPs
 # Last Modified: 2014-09-23

@@ -92,7 +92,7 @@ class AllXEPs(object):
                              the XEPs location is made when not suppied.
         """
         self.config = config
-        self.outpath = prepDir(config.outdir)
+        self.outpath = prepDir(config.outpath)
         self.xslpath = config.xslpath
         self.errors = []
         self.xeps = []
@@ -113,6 +113,11 @@ class AllXEPs(object):
             fls = glob.glob(os.path.join(os.getcwd(), '*.xml'))
             for fle in fls:
                 files.append(os.path.abspath(fle))
+        # try if we can find an existing XEP-table:
+        if os.path.isfile(os.path.join(self.outpath, "xeps.xml")):
+            self.xeptable = os.path.join(self.outpath, "xeps.xml")
+        else:
+            self.xeptable = None
         # read files to xeps
         for fle in sorted(set(files)):
             try:
