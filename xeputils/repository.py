@@ -41,6 +41,7 @@ import datetime
 import tarfile
 import xeputils.xep
 import xeputils.xeptable
+import xeputils.mail
 
 
 def prepDir(path=None):
@@ -69,7 +70,7 @@ class AllXEPs(object):
     Class containing info about all XEP XML files specified when instantiating.
     """
 
-    def __init__(self, xeps=None, outpath=None, xslpath=None):
+    def __init__(self, config):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
 
@@ -89,13 +90,14 @@ class AllXEPs(object):
                              other build depencies. A sensible guess based on
                              the XEPs location is made when not suppied.
         """
-        self.outpath = prepDir(outpath)
-        self.xslpath = xslpath
+        self.config = config
+        self.outpath = prepDir(config.outdir)
+        self.xslpath = config.xslpath
         self.errors = []
         self.xeps = []
         files = []
-        if xeps:
-            for xep in xeps:
+        if config.xeps:
+            for xep in config.xeps:
                 if os.path.isfile(xep):
                     files.append(os.path.abspath(xep))
                 elif os.path.isdir(xep):
@@ -109,6 +111,7 @@ class AllXEPs(object):
             fls = glob.glob(os.path.join(os.getcwd(), '*.xml'))
             for fle in fls:
                 files.append(os.path.abspath(fle))
+        # read files to xeps
         for fle in sorted(set(files)):
             try:
                 self.xeps.append(xeputils.xep.XEP(fle, outpath=self.outpath, xslpath=self.xslpath))
@@ -255,15 +258,31 @@ class AllXEPs(object):
         for interim in self.getInterim():
             interim.revertInterim()
 
-    def printErrors(self):
+    def processErrors(self):
         """
-        prints a overview of errors that occured while parsing and building the XEPs.
+        Prints an overview of errors that occured while parsing and building the
+        XEPs.
         """
         e = self.formatErrors()
-        if e:
-            print e
-        else:
-            print "No errors"
+        if not self.config.nologtostdout:
+            if e:
+                print e
+            else:
+                print "No errors"
+        if self.config.logtomail:
+            if e:
+                m = xeputils.mail.LogMail(self.config, e)
+                m.send()
+        if self.config.logtofile:
+            f = open(self.config.logtofile, 'a')
+            f.write("\n===================\n")
+            f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            f.write("\n===================\n")
+            if e:
+                f.write(e)
+            else:
+                f.write("No errors")
+            f.close()
 
     def formatErrors(self):
         """

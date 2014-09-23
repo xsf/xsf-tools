@@ -37,21 +37,24 @@
 import sys
 import os
 
-# hack to import relative to this script
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-
+try:
+    import xeputils
+except ImportError:
+    # hack to import relative to this script, but don't mess with
+    # the path when nog needed
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 import xeputils.repository
 import xeputils.config
+import xeputils.mail
 
 # ToDo:
-# - add sending mails
-# - structurize logging
+# - structurize logging more
 # - make some sensible scripts to start with
 
 config = xeputils.config.Config()
 
 if 1:
-    a = xeputils.repository.AllXEPs(config.xeps, config.outdir, config.xslpath)
+    a = xeputils.repository.AllXEPs(config)
 if 1:
     print "Interim:"
     print a.getInterim()
@@ -75,9 +78,7 @@ if 0:
 if 1:
     print "Building all"
     a.buildAll(showprogress=True)
-    a.printErrors()
+    a.processErrors()
 if 0:
-    print config._argdict
-    print config.conffile
-    print config.sendmail
-    print config.mailto
+    m = xeputils.mail.Deferred(config, a.xeps[0])
+    m.send()

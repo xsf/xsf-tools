@@ -132,8 +132,9 @@ class Config(object):
         --help / -h
         --debug / -d
         --sendmail / -s
-        --mailto [EMAIL] / -m [EMAIL]
-        --logtofile [FILE] / -l
+        --mailto [E-MAIL ADDRESS] / -t [E-MAIL ADDRESS]
+        --mailfrom [E-MAIL ADDRESS] / -f [E-MAIL ADDRESS]
+        --logtofile [FILE] / -l [FILE]
         --logtostdout
         --logtomail
         --mailserver [SERVER]
@@ -147,14 +148,16 @@ class Config(object):
                                   help="Print debugging output to stdout while processing")
         self._parser.add_argument("-s", "--sendmail", action='store_true',
                                   help="Send notification mails. If no --mailto is given, print mails to stdout")
-        self._parser.add_argument("--logtostdout", action='store_true',
-                                  help="Print logging messages to stdout (default)")
+        self._parser.add_argument("--nologtostdout", action='store_true',
+                                  help="Suppress printing logging messages to stdout")
         self._parser.add_argument("--logtomail", action='store_true',
                                   help="Send logging messages by mail to --mailto adresses")
         self._parser.add_argument("-l", "--logtofile", metavar="FILE",
                                   help="Specify file to send logs to.")
-        self._parser.add_argument("-m", "--mailto", nargs="+", metavar="MAIL",
-                                  help="Specify e-mail addresses to send mails to.")
+        self._parser.add_argument("-t", "--mailto", metavar="E-MAIL ADDRESS",
+                                  help="Specify e-mail address to send mails to.")
+        self._parser.add_argument("-f", "--mailfrom", metavar="E-MAIL ADDRESS",
+                                  help="Specify from mail address.")
         self._parser.add_argument("--mailserver", metavar="SERVER",
                                   help="Specify e-mail addresses to send mails to.")
         self._parser.add_argument("-x", "--xeps", metavar="XEP", nargs="+",
