@@ -90,7 +90,7 @@ ignore.
 
 class LogMail():
     MESSAGETEXT = """From: {config.mailfrom}
-To: {config.mailto}
+To: {config.logtomail}
 Subject: There where errors during the run of {script} on {date}
 
 {logs}
@@ -107,7 +107,7 @@ Subject: There where errors during the run of {script} on {date}
             date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             logs=self.logs)
         server = smtplib.SMTP(self.config.mailserver)
-        server.sendmail(self.config.mailfrom, self.config.mailto, msg)
+        server.sendmail(self.config.mailfrom, self.config.logtomail, msg)
         server.quit()
 
 

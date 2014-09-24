@@ -136,7 +136,7 @@ class Config(object):
         --mailfrom [E-MAIL ADDRESS] / -f [E-MAIL ADDRESS]
         --logtofile [FILE] / -l [FILE]
         --nologtostdout
-        --logtomail
+        --logtomail [E-MAIL ADDRESS]
         --mailserver [SERVER]
         --xeps / -x
         --outpath / -o
@@ -150,8 +150,8 @@ class Config(object):
                                   help="Send notification mails. If no --mailto is given, print mails to stdout")
         self._parser.add_argument("--nologtostdout", action='store_true',
                                   help="Suppress printing logging messages to stdout")
-        self._parser.add_argument("--logtomail", action='store_true',
-                                  help="Send logging messages by mail to --mailto adresses")
+        self._parser.add_argument("--logtomail", metavar="E-MAIL ADDRESS",
+                                  help="Send logging messages by mail to specified adress")
         self._parser.add_argument("-l", "--logtofile", metavar="FILE",
                                   help="Specify file to send logs to.")
         self._parser.add_argument("-t", "--mailto", metavar="E-MAIL ADDRESS",

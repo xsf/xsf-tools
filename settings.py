@@ -36,5 +36,5 @@ options = {
 #    "sendmail": True,
 #    "mailfrom": "ubberboss@example.invalid",
 #    "mailto": "editor@example.invalid",
-#    "logtomail": True
+#    "logtomail": "administrator@example.invalid",
     }
