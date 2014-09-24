@@ -31,9 +31,9 @@ For version control it right now depends on:
 
 Executable scripts in this package:
 
-build.py - builds HTML and PDF from XEP XML sources
-cronjob.py - performs periodical maintanance tasks
-testscript.py - testscript for developers
+* build.py - builds HTML and PDF from XEP XML sources
+* cronjob.py - performs periodical maintanance tasks, right now deferring
+* testscript.py - testscript for developers
 
 All scripts have a help function that can be called with '-h'.
 
