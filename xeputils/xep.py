@@ -35,6 +35,7 @@
 from xml.dom.minidom import parse, parseString, Document, getDOMImplementation
 import sys
 import os
+import shutil
 import re
 import datetime
 import subprocess
@@ -316,6 +317,87 @@ class XEP(object):
         self.raw = f.read()
         f.close()
         self.readXEP()
+
+    def defer(self):
+        """
+        Sets this XEP to deferred and rebuilds the HTML and PDF.
+        """
+        commitToGit = False
+        if not self.gittoplevel:
+            self.buildErrors.append(
+                "WARNING: {0} is not in a git repository, will not commit change to deferred.".format(str(self)))
+        else:
+            if self.isGitClean():
+                commitToGit = True
+            else:
+                self.buildErrors.append(
+                    "WARNING: {0} has uncommitted changes, will not commit change to deferred.".format(str(self)))
+        self.setDeferred()
+        self.buildXHTML()
+        self.buildPDF()
+        self.archive()
+        if commitToGit:
+            self.gitCommit("Deferring {}".format(str(self)))
+
+    def archive(self):
+        """
+        Copies the outputted HTML file of the current version of this XEP to
+        the ./attic subdirectory of the outdir (if both exist).
+        """
+        if self.outpath:
+            attic = os.path.join(self.outpath, "attic")
+            htmlIn = os.path.join(self.outpath,
+                                  "xep-{}.html".format(self.nrFormatted))
+            htmlOut = os.path.join(self.outpath,
+                                   "attic",
+                                   "xep-{}-{}.html".format(
+                                       self.nrFormatted,
+                                       self.version))
+            if os.path.isdir(attic) and os.path.isfile(htmlIn):
+                shutil.copy(htmlIn, htmlOut)
+
+    def isGitClean(self):
+        """
+        Checks if the source file of this XEP is clean in git. Returns False
+        if not so or if an error occured (e.g. when not on a git repository).
+        Returns True when the file is clean.
+        """
+        gitref = os.path.relpath(self.filename, self.gittoplevel)
+        p = subprocess.Popen(
+            ["git", "status", "--porcelain", gitref],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=self.gittoplevel)
+        (out, error) = p.communicate()
+        if error:
+            self.buildErrors.append(
+                "WARNING: error reading git status: {}: {}".format(str(self), error))
+            return False
+        elif out:
+            return False
+        return True
+
+    def gitCommit(self, message):
+        """
+        Commits the pending changes to the source file of this XEP to the git
+        repository it is in.
+        """
+        gitref = os.path.relpath(self.filename, self.gittoplevel)
+        p = subprocess.Popen(
+            ["git",
+             "commit",
+             "--author='XSF automation scripts <editor@xmpp.org>'",
+             "-q",
+             "-m", "[automatic commit]",
+             "-m", message,
+             gitref],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=self.gittoplevel)
+        (out, error) = p.communicate()
+        if error:
+            self.buildErrors.append(
+                "WARNING: error while committing {} to git: {}".format(str(self), error))
 
     def revertInterim(self):
         """

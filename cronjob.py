@@ -54,23 +54,15 @@ config = xeputils.config.Config()
 # read the XEPs
 xeps = xeputils.repository.AllXEPs(config)
 
-# try to find the XEP table:
-
 # Defer expired XEPs
-expired = xeps.getExpired()
-for x in expired:
-    x.setDeferred()
-    x.buildXHTML()
-    x.buildPDF()
+for x in xeps.getExpired():
+    x.defer()
     if config.sendmail:
         m = xeputils.mail.Deferred(config, x)
         m.send()
     if xeps.xeptable:
         x.updateTable(xeps.xeptable,
-                     os.path.join(xeps.outpath, "xeplist.txt"))
+                      os.path.join(xeps.outpath, "xeplist.txt"))
 
-# ToDo:
-# - Commit changes to git
-# - copy to attic
-
+# Make sure we report errors properly
 xeps.processErrors()

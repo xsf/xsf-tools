@@ -48,7 +48,7 @@ __authors__ = ["Winfried Tilanus <winfried@tilanus.com>"]
 __credits__ = ["Tobias Markmann <tm@ayena.de>",
                "Peter Saint-Andre <stpeter@jabber.org>"]
 __copyright__ = "1999 - 2014 XMPP Standards Foundation"
-__date__ = "2014-09-23"
+__date__ = "2014-09-24"
 __version__ = "0.3"
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy

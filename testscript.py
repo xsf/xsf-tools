@@ -3,7 +3,7 @@
 # File: testscript.py
 # Version: 0.2
 # Description: utility functions for handling XEPs
-# Last Modified: 2014-06-19
+# Last Modified: 2014-09-23
 # Based on scripts by:
 #    Tobias Markmann (tm@ayena.de)
 #    Peter Saint-Andre (stpeter@jabber.org)
@@ -62,8 +62,6 @@ if 1:
     print "Expired:"
     for i in a.getExpired():
         print i, i.date
-    print "Table:"
-    print a.xeptable
 if 0:
     print "With images:"
     for i in a.getWithImages():
@@ -74,6 +72,10 @@ if 0:
     a.revertInterims()
     for i in ii:
         i.buildXHTML()
+if 1:
+    if a.getExpired():
+        x = a.getExpired()[0]
+        x.defer()
 if 0:
     print "Building all"
     a.buildAll(showprogress=True)
