@@ -41,6 +41,7 @@ Builds specified XEPs. Run with '-h' as option for usage.
 import sys
 import os
 
+# TODO move xeputils into it's own PyPI project
 try:
     import xeputils
 except ImportError:

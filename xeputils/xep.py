@@ -456,7 +456,7 @@ class XEP(object):
             outpath = self.outpath
         xeputils.builder.buildXHTML(self, outpath, xslpath)
 
-    def buildPDF(self, outpath=None, xslpath=None):
+    def buildPDF(self, outpath=None, xslpath=None, imagespath=None):
         """
         Generates a nice formatted PDF file from the XEP.
 
@@ -470,7 +470,7 @@ class XEP(object):
         """
         if not outpath and self.outpath:
             outpath = self.outpath
-        xeputils.builder.buildPDF(self, outpath, xslpath)
+        xeputils.builder.buildPDF(self, outpath, xslpath, imagespath)
 
     def updateTable(self, xmlfile, htmlfile):
         """

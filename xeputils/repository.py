@@ -66,11 +66,12 @@ def prepDir(path=None):
 
 
 class AllXEPs(object):
-
+    # TODO create a log/say method that contains the if showprogress; print code
     """
     Class containing info about all XEP XML files specified when instantiating.
     """
-
+    # TODO move config.outpath and config.xlspath to class init parameters
+    # TODO move config.xeps to the parameter list for the buildAll method
     def __init__(self, config):
         """
         Reads all XEP XML-files in directory and parses the meta-info.
@@ -94,6 +95,7 @@ class AllXEPs(object):
         self.config = config
         self.outpath = prepDir(config.outpath)
         self.xslpath = config.xslpath
+        self.imagespath = config.imagespath
         self.errors = []
         self.xeps = []
         files = []
@@ -187,6 +189,8 @@ class AllXEPs(object):
         """
         return [x for x in self.xeps if x.parseErrors]
 
+    # TODO move showprogress to a class init parameter
+    # TODO add xeps list to this method signature
     def buildAll(self, showprogress=False):
         """
         Generate XHTML and PDF Files for all XEPs, including a XHTML index
@@ -204,8 +208,8 @@ class AllXEPs(object):
                     xep.filename[-40:], counter, len(self.xeps)))
                 sys.stdout.flush()
                 counter += 1
-            xep.buildXHTML(self.outpath, self.xslpath)
-            xep.buildPDF(self.outpath, self.xslpath)
+            xep.buildXHTML(self.outpath, self.xslpath, self.imagespath)
+            xep.buildPDF(self.outpath, self.xslpath, self.imagespath)
         if showprogress:
             sys.stdout.write("\rBuilding index table")
             sys.stdout.flush()

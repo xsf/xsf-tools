@@ -144,7 +144,7 @@ def buildXHTML(xep, outpath=None, xslpath=None):
     shutil.rmtree(temppath)
 
 
-def buildPDF(xep, outpath=None, xslpath=None):
+def buildPDF(xep, outpath=None, xslpath=None, imagespath=None):
     """
     Generates a nice formatted PDF file from the XEP.
     Arguments:
@@ -157,14 +157,19 @@ def buildPDF(xep, outpath=None, xslpath=None):
     """
     outpath = xeputils.repository.prepDir(outpath)
     temppath = tempfile.mkdtemp(prefix='XEPbuilder_')
+    if imagespath is None:
+        imagespath = "../images/"
+    imagespath = os.path.abspath(os.path.join(imagespath))
     if not xslpath:
         if os.path.basename(xep.path) == 'inbox':
             xslpath = os.path.abspath(os.path.join(xep.path, ".."))
         else:
             xslpath = xep.path
 
-    for fle in ["xep.ent", "xep.dtd", "xep2texml.xsl", "../images/xmpp.pdf",
-                "../images/xmpp-text.pdf", "deps/adjcalc.sty",
+    for fle in ["xep.ent", "xep.dtd", "xep2texml.xsl", 
+                os.path.join(imagespath, "xmpp.pdf"),
+                os.path.join(imagespath, "xmpp-text.pdf",
+                "deps/adjcalc.sty",
                 "deps/collectbox.sty", "deps/tc-dvips.def", "deps/tc-pgf.def",
                 "deps/trimclip.sty", "deps/adjustbox.sty", "deps/tabu.sty",
                 "deps/tc-pdftex.def", "deps/tc-xetex.def"]:

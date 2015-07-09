@@ -85,6 +85,7 @@ class Config(object):
         "conffile": "settings.py",
         "logtostdout": True,
         "mailserver": "localhost",
+        "imagespath": "../images/",
     }
 
     def __init__(self, parse=True):
@@ -141,6 +142,7 @@ class Config(object):
         --xeps / -x
         --outpath / -o
         --xslpath
+        --imagespath
         """
         self._parser.add_argument("-h", "--help", action='store_true',
                                   help="Print this help.")
@@ -166,6 +168,8 @@ class Config(object):
                                   help="Specify directory for build results. Will be created when not existent. A temporary directory will be used when not specified.")
         self._parser.add_argument("--xslpath", metavar="PATH",
                                   help="Specify path where to look for the XSL stylesheets and the other build dependencies when building the XEP.")
+        self._parser.add_argument("--imagespath", metavar="PATH",
+                                  help="Specify path where to look for the images to include when building the XEP.")
 
     def _parse(self):
         """
