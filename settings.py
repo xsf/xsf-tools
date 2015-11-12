@@ -37,4 +37,5 @@ options = {
 #    "mailfrom": "ubberboss@example.invalid",
 #    "mailto": "editor@example.invalid",
 #    "logtomail": "administrator@example.invalid",
+#    "imagespath": "../images/",
     }

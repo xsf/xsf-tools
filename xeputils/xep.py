@@ -56,9 +56,11 @@ class XEP(object):
         depends (list):                 List of strings containing all specs
                                             listed in this XEP dependencies
                                             nodes
-        filename (str or None)          Full filename of the parsed XEP, None if
+        filename (str or None):         Full filename of the parsed XEP, None if
                                             the XEP was parsed from a raw XML
                                             string
+        imagespath (str or None):       Directory to look for the images needed to build
+                                            the PDF files.
         interim (bool):                 True if the XEP has an 'interim' tag
         lastcall (datetime or False):   The 'lastcall' date, if the XEP has
                                             one, else False
@@ -74,7 +76,7 @@ class XEP(object):
                                             in the inbox.
         nrFormatted (str):              The XEP 'number' in the format '0001' or
                                             the string value of 'nr'.
-        outpath (str or Nont):          The path where build XEPs are stored,
+        outpath (str or None):          The path where build XEPs are stored,
                                             when None, a temporary path is used.
         parseErrors (list):             A list of errors that occured while
                                             parsing the XEP.
@@ -88,9 +90,12 @@ class XEP(object):
                                             latest revision of the XEP
         xep (minidom document)          The full XML tree of the XEP as minidom
                                             document
+        xslpath (str or None):          Directory to look for the XSLT stylesheets and the
+                                            other build depencies. A sensible guess based on
+                                            the XEPs location is made when not suppied.
     """
 
-    def __init__(self, filename, outpath=None, xslpath=None):
+    def __init__(self, filename, outpath=None, xslpath=None, imagespath=None):
         """
         Creates an XEP object.
 
@@ -106,6 +111,9 @@ class XEP(object):
         self.xslpath = None
         if xslpath:
             self.xslpath = os.path.abspath(xslpath)
+        self.imagespath = None
+        if imagespath:
+            self.imagespath = os.path.abspath(imagespath)
         # check if we are in a git repository and get the toplevel
         p = subprocess.Popen(["git", "rev-parse", "--show-toplevel"],
                              stdout=subprocess.PIPE,
@@ -456,7 +464,7 @@ class XEP(object):
             outpath = self.outpath
         xeputils.builder.buildXHTML(self, outpath, xslpath)
 
-    def buildPDF(self, outpath=None, xslpath=None):
+    def buildPDF(self, outpath=None, xslpath=None, imagespath=None):
         """
         Generates a nice formatted PDF file from the XEP.
 
@@ -470,7 +478,11 @@ class XEP(object):
         """
         if not outpath and self.outpath:
             outpath = self.outpath
-        xeputils.builder.buildPDF(self, outpath, xslpath)
+        if not xslpath and self.xslpath:
+            xslpath = self.xslpath
+        if not imagespath and self.imagespath:
+            imagespath = self.imagespath
+        xeputils.builder.buildPDF(self, outpath, xslpath, imagespath)
 
     def updateTable(self, xmlfile, htmlfile):
         """
