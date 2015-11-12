@@ -87,7 +87,7 @@ class AllXEPs(object):
             outpath (str):   Directory to place the build XEPs in. Will be
                              created when non-existing. When empty, False or
                              None, a temporary directory will be created.
-            xslpath (str):  Directory to look for the XSLT stylesheets and the
+            xslpath (str):   Directory to look for the XSLT stylesheets and the
                              other build depencies. A sensible guess based on
                              the XEPs location is made when not suppied.
         """

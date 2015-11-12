@@ -41,7 +41,7 @@ try:
     import xeputils
 except ImportError:
     # hack to import relative to this script, but don't mess with
-    # the path when nog needed
+    # the path when not needed
     sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
     import xeputils
 
@@ -62,6 +62,7 @@ if 1:
     print "Expired:"
     for i in a.getExpired():
         print i, i.date
+        i.pprint()
 if 0:
     print "With images:"
     for i in a.getWithImages():
@@ -72,7 +73,7 @@ if 0:
     a.revertInterims()
     for i in ii:
         i.buildXHTML()
-if 1:
+if 0:
     if a.getExpired():
         x = a.getExpired()[0]
         x.defer()
