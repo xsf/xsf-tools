@@ -168,7 +168,7 @@ def buildPDF(xep, outpath=None, xslpath=None, imagespath=None):
 
     for fle in ["xep.ent", "xep.dtd", "xep2texml.xsl", 
                 os.path.join(imagespath, "xmpp.pdf"),
-                os.path.join(imagespath, "xmpp-text.pdf",
+                os.path.join(imagespath, "xmpp-text.pdf"),
                 "deps/adjcalc.sty",
                 "deps/collectbox.sty", "deps/tc-dvips.def", "deps/tc-pgf.def",
                 "deps/trimclip.sty", "deps/adjustbox.sty", "deps/tabu.sty",
