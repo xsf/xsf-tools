@@ -62,7 +62,7 @@ if 1:
     print "Expired:"
     for i in a.getExpired():
         print i, i.date
-if 0:
+if 1:
     print "With images:"
     for i in a.getWithImages():
         i.pprint()

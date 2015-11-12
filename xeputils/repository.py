@@ -88,9 +88,11 @@ class AllXEPs(object):
             outpath (str):   Directory to place the build XEPs in. Will be
                              created when non-existing. When empty, False or
                              None, a temporary directory will be created.
-            xslpath (str):  Directory to look for the XSLT stylesheets and the
+            xslpath (str):   Directory to look for the XSLT stylesheets and the
                              other build depencies. A sensible guess based on
                              the XEPs location is made when not suppied.
+            imagespath (str): Directory to look for the images needed to build
+                             the PDF files.
         """
         self.config = config
         self.outpath = prepDir(config.outpath)
@@ -126,7 +128,8 @@ class AllXEPs(object):
                 self.xeps.append(
                     xeputils.xep.XEP(fle,
      outpath=self.outpath,
-     xslpath=self.xslpath))
+     xslpath=self.xslpath,
+     imagespath=self.imagespath))
             except:
                 e = "Error while parsing {}\n".format(fle)
                 e += "FATAL: {} is not included\n".format(fle)
