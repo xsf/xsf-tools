@@ -462,6 +462,8 @@ class XEP(object):
         """
         if not outpath and self.outpath:
             outpath = self.outpath
+        if not xslpath and self.xslpath:
+            xslpath = self.xslpath
         xeputils.builder.buildXHTML(self, outpath, xslpath)
 
     def buildPDF(self, outpath=None, xslpath=None, imagespath=None):

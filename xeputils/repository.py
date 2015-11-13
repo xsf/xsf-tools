@@ -211,7 +211,7 @@ class AllXEPs(object):
                     xep.filename[-40:], counter, len(self.xeps)))
                 sys.stdout.flush()
                 counter += 1
-            xep.buildXHTML(self.outpath, self.xslpath, self.imagespath)
+            xep.buildXHTML(self.outpath, self.xslpath)
             xep.buildPDF(self.outpath, self.xslpath, self.imagespath)
         if showprogress:
             sys.stdout.write("\rBuilding index table")
