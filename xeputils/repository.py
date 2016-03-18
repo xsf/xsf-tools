@@ -235,7 +235,9 @@ class AllXEPs(object):
         """
         t = xeputils.xeptable.XEPTable()
         for xep in self.xeps:
-            t.updateXEP(xep)
+            # Do not include XEP readme and template in the table.
+            if isinstance( xep.nr, ( int, long ) ) :
+                t.updateXEP(xep)
         t.writeXMLTable(xmlfile)
         t.writeHTMLTable(htmlfile)
 

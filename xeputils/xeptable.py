@@ -46,7 +46,7 @@ HTMLTableHeader = """<table border="1" cellpadding="3" cellspacing="0" class="so
 HTMLTableRow = """
   <tr class="tablebody XEP-{status}" id="xep{number}">
     <td valign="top">
-      <a href="/extensions/xep-{number}.html">XEP-0001</a> <a href="/extensions/xep-{number}.pdf">(PDF)</a>
+      <a href="/extensions/xep-{number}.html">XEP-{number}</a> <a href="/extensions/xep-{number}.pdf">(PDF)</a>
     </td>
     <td valign="top">
       {name}
